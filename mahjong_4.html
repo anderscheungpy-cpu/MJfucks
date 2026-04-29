@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>麻雀記分</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ede8df;
+    --bg2: #e4ddd3;
+    --card: #ffffff;
+    --text: #2c2825;
+    --text2: #8a7f74;
+    --text3: #b8ad9e;
+    --green: #3a8c5c;
+    --red: #c94040;
+    --orange: #d4732a;
+    --dealer-bg: #e8a030;
+    --dealer-text: #fff;
+    --tab-active: #6b5c3e;
+    --pill-bg: #e4ddd3;
+    --pill-text: #6b5c3e;
+    --modal-overlay: rgba(0,0,0,0.35);
+    --radius: 18px;
+    --radius-sm: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); font-family: 'Noto Sans TC', sans-serif; color: var(--text); overflow: hidden; }
+  #root { display: flex; flex-direction: column; height: 100%; max-width: 430px; margin: 0 auto; position: relative; }
+
+  /* ── Tab bar ── */
+  .tabbar { display: flex; background: var(--bg); border-top: 1px solid var(--bg2); padding: 8px 0 20px; flex-shrink: 0; }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; }
+  .tab svg { width: 22px; height: 22px; }
+  .tab span { font-size: 11px; color: var(--text3); }
+  .tab.active span { color: var(--tab-active); font-weight: 700; }
+  .tab.active svg path, .tab.active svg rect, .tab.active svg line { stroke: var(--tab-active); }
+  .tab svg path, .tab svg rect, .tab svg line { stroke: var(--text3); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── Pages ── */
+  .page { display: none; flex: 1; overflow-y: auto; overflow-x: hidden; }
+  .page.active { display: block; }
+
+  /* ── Game page ── */
+  .game-page { background: var(--bg); padding: 12px 12px 0; }
+  .round-info { text-align: center; margin-bottom: 8px; }
+  .round-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--bg2); border-radius: 99px; padding: 4px 14px; font-size: 13px; color: var(--text2); font-weight: 500; }
+  .round-badge .arrow { color: var(--orange); font-size: 12px; }
+
+  /* Cross layout */
+  .cross { position: relative; display: grid; grid-template-columns: 1fr 96px 1fr; grid-template-rows: auto auto auto; gap: 8px; padding: 4px 0; }
+  .cross-top    { grid-column: 2; grid-row: 1; }
+  .cross-left   { grid-column: 1; grid-row: 2; }
+  .cross-center { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+  .cross-right  { grid-column: 3; grid-row: 2; }
+  .cross-bottom { grid-column: 2; grid-row: 3; }
+
+  .player-card { background: var(--card); border-radius: var(--radius); padding: 10px 6px; text-align: center; cursor: pointer; transition: transform 0.1s; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .player-card:active { transform: scale(0.97); }
+  .player-card.is-dealer { box-shadow: 0 2px 12px rgba(212,115,42,0.18); }
+  .dealer-badge { position: absolute; top: 6px; left: 6px; background: var(--dealer-bg); color: var(--dealer-text); font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 5px; }
+  .player-emoji { font-size: 20px; margin-bottom: 2px; }
+  .player-name { font-size: 11px; color: var(--text2); margin-bottom: 4px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player-score { font-size: 22px; font-weight: 900; line-height: 1; }
+  .player-score.pos { color: var(--green); }
+  .player-score.neg { color: var(--red); }
+  .player-score.zero { color: var(--text3); }
+
+  .center-wind { font-size: 13px; font-weight: 700; color: var(--orange); text-align: center; }
+  .liuju-btn { background: var(--card); border: none; border-radius: var(--radius-sm); padding: 10px 18px; font-size: 14px; font-family: 'Noto Sans TC', sans-serif; color: var(--text); cursor: pointer; font-weight: 500; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .liuju-btn:active { transform: scale(0.97); }
+
+
+
+  /* ── Stats page ── */
+  .stats-page { padding: 16px; }
+  .stat-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); }
+  .stat-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--bg2); }
+  .stat-emoji { font-size: 22px; }
+  .stat-name { font-size: 15px; font-weight: 700; flex: 1; }
+  .stat-pill { background: var(--pill-bg); color: var(--pill-text); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; }
+  .stat-num { font-size: 20px; font-weight: 700; color: var(--text); }
+  .stat-num.crown::after { content: ' 👑'; font-size: 12px; }
+  .stat-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* ── Log page ── */
+  .log-page { padding: 12px; }
+  .log-table { width: 100%; border-collapse: collapse; }
+  .log-header { position: sticky; top: 0; background: var(--bg); z-index: 2; }
+  .log-header td { padding: 6px 4px; text-align: center; font-size: 11px; color: var(--text2); }
+  .log-header .player-col { font-size: 12px; font-weight: 700; color: var(--text); }
+  .log-row td { padding: 8px 4px; text-align: center; font-size: 13px; border-bottom: 1px solid var(--bg2); }
+  .log-row .wind-cell { font-size: 11px; color: var(--text2); background: var(--bg2); border-radius: 8px; padding: 3px 0; }
+  .log-row .score-cell { font-weight: 700; }
+  .log-row .score-cell.pos { color: var(--green); }
+  .log-row .score-cell.neg { color: var(--red); }
+  .log-row .score-cell.zero { color: var(--text3); }
+  .log-total td { padding: 10px 4px; font-weight: 900; font-size: 15px; border-top: 2px solid var(--bg2); text-align: center; }
+  .log-section { font-size: 11px; color: var(--text3); text-align: left; padding: 12px 4px 4px; font-weight: 600; letter-spacing: 0.5px; }
+
+  /* ── Setup page ── */
+  .setup-page { padding: 20px 16px; }
+  .setup-title { font-size: 20px; font-weight: 900; margin-bottom: 20px; color: var(--text); }
+  .seat-row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .seat-wind { width: 30px; height: 30px; border-radius: 8px; background: var(--bg2); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--tab-active); }
+  .seat-name { flex: 1; font-size: 15px; font-weight: 500; }
+  .seat-empty { color: var(--text3); font-size: 14px; }
+  .seat-clear { color: var(--red); font-size: 18px; background: none; border: none; cursor: pointer; padding: 4px; }
+  .setup-label { font-size: 12px; color: var(--text2); margin: 16px 0 6px; font-weight: 600; }
+  .unit-input { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--bg2); background: var(--card); font-size: 16px; font-family: 'Noto Sans TC', sans-serif; color: var(--text); outline: none; }
+  .unit-input:focus { border-color: var(--orange); }
+  .start-btn { width: 100%; margin-top: 20px; padding: 16px; background: var(--tab-active); color: #fff; border: none; border-radius: var(--radius); font-size: 17px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; }
+  .start-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── Pick player page ── */
+  .pick-page { padding: 16px; }
+  .pick-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .pick-item { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+  .pick-item:active { opacity: 0.7; }
+  .pick-emoji { font-size: 22px; }
+  .pick-name { flex: 1; font-size: 15px; font-weight: 500; }
+  .pick-chevron { color: var(--text3); }
+  .back-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; font-size: 15px; color: var(--orange); font-family: 'Noto Sans TC', sans-serif; cursor: pointer; margin-bottom: 16px; padding: 0; }
+
+  /* ── Profiles page ── */
+  .profiles-page { padding: 16px; }
+  .page-header { display: flex; align-items: center; margin-bottom: 16px; }
+  .page-title { flex: 1; font-size: 18px; font-weight: 700; }
+  .add-btn { background: var(--tab-active); color: #fff; border: none; border-radius: 99px; padding: 6px 14px; font-size: 13px; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; font-weight: 600; }
+  .profile-item { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .profile-info { flex: 1; }
+  .profile-name { font-size: 15px; font-weight: 600; }
+  .profile-stats { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .icon-btn { background: none; border: 1px solid var(--bg2); border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: 'Noto Sans TC', sans-serif; }
+  .icon-btn.del { color: var(--red); border-color: #f5c5c5; }
+  .emoji-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
+  .emoji-opt { font-size: 26px; text-align: center; padding: 8px; border-radius: var(--radius-sm); background: var(--bg2); cursor: pointer; border: 2px solid transparent; }
+  .emoji-opt.sel { border-color: var(--orange); background: #fff3e0; }
+
+  /* ── Modal ── */
+  .modal-overlay { position: fixed; inset: 0; background: var(--modal-overlay); z-index: 100; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-sheet { background: var(--card); border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; padding: 20px 20px 36px; transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.32,0.72,0,1); max-height: 88vh; overflow-y: auto; }
+  .modal-overlay.open .modal-sheet { transform: translateY(0); }
+  .modal-title { font-size: 20px; font-weight: 900; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+  .modal-section { font-size: 12px; color: var(--text2); font-weight: 600; margin: 14px 0 6px; }
+  .type-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+  .type-btn { padding: 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--bg2); background: var(--bg); font-size: 14px; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; font-weight: 500; color: var(--text); text-align: center; transition: all 0.15s; }
+  .type-btn.sel { background: #fff7ed; border-color: var(--orange); color: var(--orange); font-weight: 700; }
+  .picker-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .picker-col { background: var(--bg); border-radius: var(--radius-sm); overflow: hidden; }
+  .picker-col-title { font-size: 11px; color: var(--text2); padding: 8px 12px 4px; font-weight: 600; }
+  .picker-item { padding: 11px 12px; font-size: 15px; cursor: pointer; border-radius: 8px; margin: 2px 4px; font-weight: 500; }
+  .picker-item.sel { background: var(--orange); color: #fff; font-weight: 700; }
+  .picker-item.disabled { opacity: 0.3; pointer-events: none; }
+  .preview-bar { background: var(--bg); border-radius: var(--radius-sm); padding: 12px 14px; margin: 12px 0; font-size: 12px; line-height: 1.7; }
+  .drum-wrap { cursor: ns-resize; user-select: none; }
+  .preview-row { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; }
+  .preview-total { border-top: 1px solid var(--bg2); margin-top: 6px; padding-top: 6px; font-weight: 700; font-size: 14px; }
+  .confirm-btn { width: 100%; padding: 16px; background: var(--orange); color: #fff; border: none; border-radius: var(--radius); font-size: 17px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; margin-top: 4px; }
+  .confirm-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── Edit profile modal ── */
+  .edit-input { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--bg2); background: var(--bg); font-size: 16px; font-family: 'Noto Sans TC', sans-serif; color: var(--text); outline: none; margin-bottom: 12px; }
+  .edit-input:focus { border-color: var(--orange); }
+  .save-btn { width: 100%; padding: 14px; background: var(--tab-active); color: #fff; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; }
+
+  /* ── Home (no game) ── */
+  .home-page { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; padding: 32px; }
+  .home-title { font-size: 28px; font-weight: 900; color: var(--text); margin-bottom: 8px; }
+  .home-sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; text-align: center; }
+  .home-btn { width: 100%; padding: 16px; border-radius: var(--radius); font-size: 17px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; border: none; }
+  .home-btn.primary { background: var(--tab-active); color: #fff; }
+  .home-btn.secondary { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="root">
+  <div id="main-content" style="flex:1;overflow:hidden;display:flex;flex-direction:column;"></div>
+  <div class="tabbar" id="tabbar" style="display:none;">
+    <div class="tab active" data-tab="game" onclick="switchTab('game')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22" style="fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+      <span>現時賽果</span>
+    </div>
+    <div class="tab" data-tab="stats" onclick="switchTab('stats')">
+      <svg viewBox="0 0 24 24"><rect x="18" y="3" width="4" height="18" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="2" y="13" width="4" height="8" rx="1"/></svg>
+      <span>統計數據</span>
+    </div>
+    <div class="tab" data-tab="log" onclick="switchTab('log')">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      <span>詳細記錄</span>
+    </div>
+  </div>
+</div>
+
+<!-- Win modal -->
+<div class="modal-overlay" id="winModal">
+  <div class="modal-sheet" id="winSheet">
+    <div id="winSheetContent"></div>
+  </div>
+</div>
+
+<!-- Edit profile modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-sheet">
+    <div id="editSheetContent"></div>
+  </div>
+</div>
+
+<script>
+const WINDS = ['東','南','西','北'];
+const EMOJIS = ['🐭','🐮','🐯','🐰','🐲','🐍','🐴','🐏','🐵','🐔','🐶','🐷','😺','🦊','🐻','🐼','🐨','🦁'];
+const PROFILES_KEY = 'mj_profiles_v2';
+const GAME_KEY = 'mj_game_v5';
+
+function loadProfiles() { try { return JSON.parse(localStorage.getItem(PROFILES_KEY)) || []; } catch { return []; } }
+function saveProfiles(p) { localStorage.setItem(PROFILES_KEY, JSON.stringify(p)); }
+function loadGame() { try { return JSON.parse(localStorage.getItem(GAME_KEY)); } catch { return null; } }
+function saveGame(g) { localStorage.setItem(GAME_KEY, JSON.stringify(g)); }
+function clearGame() { localStorage.removeItem(GAME_KEY); }
+
+const DEFAULT_PROFILES = [
+  {name:'Anders', emoji:'🦊', totalScore:0, totalWins:0, totalLosses:0},
+  {name:'Philip', emoji:'🐭', totalScore:0, totalWins:0, totalLosses:0},
+  {name:'Anfern', emoji:'🐯', totalScore:0, totalWins:0, totalLosses:0},
+  {name:'Rosie',  emoji:'🐰', totalScore:0, totalWins:0, totalLosses:0},
+  {name:'Gina',   emoji:'🐮', totalScore:0, totalWins:0, totalLosses:0},
+  {name:'Kaylee', emoji:'🐻', totalScore:0, totalWins:0, totalLosses:0},
+];
+function initProfiles() {
+  const p = loadProfiles();
+  if (p.length === 0) { saveProfiles(DEFAULT_PROFILES); return DEFAULT_PROFILES; }
+  return p;
+}
+
+let S = {
+  view: 'home',
+  tab: 'game',
+  profiles: initProfiles(),
+  game: loadGame(),
+  editingProfile: null,
+  setupSeats: [null,null,null,null],
+  setupUnitHu: 2,
+  setupUnitZimo: 1,
+  pickingFor: null,
+  winInput: { type:'hu', winners:[], discard:null, fans:{} },
+  editEmoji: '🐶',
+};
+
+// ── Core logic ──────────────────────────────────────────────────────────────
+// fans: { winnerIdx: fanValue } — each winner can have a different fan count
+function calcHandPayments(game, winners, discardIdx, fans, isZimo) {
+  const dealer = game.dealer;
+  const n = game.dealerStreak;
+  const bonus = 2 * n + 1;
+  const chains = game.chains || {};
+  const currentWinners = game.currentWinners || [];
+  const unit = isZimo ? (game.unitZimo||game.unit||1) : (game.unitHu||game.unit||1);
+  const payments = [0,0,0,0];
+  const newChains = {};
+  const events = [];
+
+  winners.forEach(wIdx => {
+    const fan = fans[wIdx] || 1;
+    const base = fan + 5;
+    const winnerIsDealer = wIdx === dealer;
+    const losers = isZimo ? [0,1,2,3].filter(i=>i!==wIdx) : [discardIdx];
+
+    losers.forEach(lIdx => {
+      const pairKey = `${wIdx}-${lIdx}`;
+      const reverseKey = `${lIdx}-${wIdx}`;
+      const loserIsDealer = lIdx === dealer;
+
+      // base pay with 連莊 if 莊 involved
+      let dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
+      let basePay = base + dealerBonusPay;
+
+      const prevCumulative = chains[pairKey] || 0;
+      const reverseCumulative = chains[reverseKey] || 0;
+
+      let thisPay = basePay;
+      let newCumulative = basePay;
+
+      if (reverseCumulative > 0 && currentWinners.includes(lIdx)) {
+        // 剪
+        const clawback = Math.floor(reverseCumulative * 0.5);
+        thisPay = basePay + clawback;
+        newCumulative = basePay;
+        events.push({ type:'剪', winner:wIdx, loser:lIdx, clawback, fan, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumulative, isZimo });
+      } else if (prevCumulative > 0) {
+        // 拉
+        const pullBonus = Math.floor(prevCumulative * 0.5);
+        thisPay = basePay + pullBonus;
+        newCumulative = prevCumulative + thisPay;
+        events.push({ type:'拉', winner:wIdx, loser:lIdx, pullBonus, fan, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, isZimo });
+      } else {
+        events.push({ type:'normal', winner:wIdx, loser:lIdx, fan, dealerBonusPay, basePay, total:thisPay, isZimo });
+      }
+
+      payments[wIdx] += thisPay;
+      payments[lIdx] -= thisPay;
+      newChains[pairKey] = newCumulative;
+    });
+  });
+
+  // Preserve chains for current winners not touched this hand
+  Object.keys(chains).forEach(key => {
+    const [w] = key.split('-').map(Number);
+    if (winners.includes(w) && !newChains[key]) newChains[key] = chains[key];
+  });
+
+  return { payments, newChains, events, unit };
+}
+
+function applyHand(game, result) {
+  const { type, winners, discardIdx, fans } = result;
+  const isZimo = type === 'zimo';
+  const prevDealer = game.dealer;
+  const n = game.dealerStreak;
+
+  if (type === 'liuju') {
+    return { ...game, dealerStreak: n+1, currentWinners:[], log:[{type:'流局',round:game.round},...game.log], round:game.round+1 };
+  }
+
+  const { payments, newChains, events, unit } = calcHandPayments(game, winners, discardIdx, fans, isZimo);
+  const players = game.players.map((p,i) => ({
+    ...p,
+    score: p.score + payments[i]*unit,
+    wins: p.wins + (winners.includes(i)?1:0),
+    losses: p.losses + (payments[i]<0?1:0),
+    zimoWins: (p.zimoWins||0) + (winners.includes(i)&&isZimo?1:0),
+    huWins: (p.huWins||0) + (winners.includes(i)&&!isZimo?1:0),
+    shots: (p.shots||0) + (!isZimo&&i===discardIdx?1:0),
+  }));
+
+  const dealerWon = winners.includes(prevDealer);
+  const newDealer = dealerWon ? prevDealer : (prevDealer+1)%4;
+  const newStreak = dealerWon ? n+1 : 0;
+  // windRound advances each time dealer wraps from seat 3 back to seat 0
+  const windRound = (game.windRound||0) + (!dealerWon && prevDealer===3 ? 1 : 0);
+
+  const pname = i => game.players[i].name;
+  const fanDesc = winners.map(w=>`${pname(w)}${fans[w]}番`).join('、');
+  const desc = isZimo
+    ? `${winners.map(pname).join('、')} 自摸 ${fanDesc}`
+    : `${winners.map(pname).join('、')} 胡 ${pname(discardIdx)} 出 ${fanDesc}`;
+
+  const log = { type:isZimo?'自摸':'食糊', desc, payments, unit, round:game.round, events, dealer:prevDealer, dealerStreak:n };
+  return { ...game, players, dealer:newDealer, dealerStreak:newStreak, windRound, chains:newChains, currentWinners:winners, log:[log,...game.log], round:game.round+1 };
+}
+
+function buildPreview(g, w) {
+  const isZimo = w.type==='zimo';
+  const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
+  if (!allFansSet) return null;
+  if (w.type==='hu' && w.discard===null) return null;
+  const { payments, events, unit } = calcHandPayments(g, w.winners, w.discard, w.fans, isZimo);
+  return { payments, events, unit };
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function scoreClass(n) { return n>0?'pos':n<0?'neg':'zero'; }
+function fmt(n) { return (n>=0?'+':'')+n; }
+
+function render() {
+  const mc = document.getElementById('main-content');
+  const tb = document.getElementById('tabbar');
+
+  if (S.view === 'home') {
+    tb.style.display='none';
+    mc.innerHTML = renderHome();
+  } else if (S.view === 'setup') {
+    tb.style.display='none';
+    mc.innerHTML = renderSetup();
+  } else if (S.view === 'pickPlayer') {
+    tb.style.display='none';
+    mc.innerHTML = renderPickPlayer();
+  } else if (S.view === 'profiles') {
+    tb.style.display='none';
+    mc.innerHTML = renderProfiles();
+  } else if (S.view === 'editProfile') {
+    tb.style.display='none';
+    mc.innerHTML = renderEditProfilePage();
+  } else if (S.view === 'game') {
+    tb.style.display='flex';
+    mc.innerHTML = renderGameShell();
+    renderTab();
+  }
+}
+
+function renderHome() {
+  const g = S.game;
+  if (g) {
+    // Show resume
+    return `<div style="padding:20px 16px;overflow-y:auto;height:100%">
+      <div style="font-size:24px;font-weight:900;margin-bottom:4px">🀄 麻雀記分</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:20px">港式台灣牌</div>
+      <div style="background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.05)">
+        <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:10px">進行中 · 第${g.round}局 · 出銃$${g.unitHu} 自摸$${g.unitZimo}/番</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          ${g.players.map((p,i)=>`<div style="background:var(--bg);border-radius:12px;padding:10px;text-align:center">
+            <div style="font-size:18px">${p.emoji}</div>
+            <div style="font-size:12px;color:var(--text2);font-weight:500">${esc(p.name)}</div>
+            <div style="font-size:20px;font-weight:900;color:${p.score>0?'var(--green)':p.score<0?'var(--red)':'var(--text3)'}">${p.score>0?'+':''}${p.score}</div>
+          </div>`).join('')}
+        </div>
+        <button class="home-btn primary" onclick="resumeGame()">繼續遊戲</button>
+        <button class="home-btn secondary" onclick="endGame()" style="margin-top:8px">結束本局</button>
+      </div>
+      <button class="home-btn secondary" onclick="goSetup()">新遊戲</button>
+      <button class="home-btn secondary" onclick="S.view='profiles';render()" style="margin-top:8px">牌友管理</button>
+    </div>`;
+  }
+  return `<div class="home-page">
+    <div style="font-size:48px;margin-bottom:4px">🀄</div>
+    <div class="home-title">麻雀記分</div>
+    <div class="home-sub">港式台灣牌<br>拉 · 剪 · 連莊</div>
+    <button class="home-btn primary" style="width:100%" onclick="goSetup()">新遊戲</button>
+    <button class="home-btn secondary" style="width:100%;margin-top:8px" onclick="S.view='profiles';render()">牌友管理</button>
+  </div>`;
+}
+
+function renderSetup() {
+  const seats = S.setupSeats;
+  const ready = !seats.some(s=>!s);
+  return `<div class="setup-page" style="overflow-y:auto;height:100%">
+    <button class="back-btn" onclick="S.view='home';render()">← 返回</button>
+    <div class="setup-title">新遊戲設定</div>
+    <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">選擇座位 (東→南→西→北)</div>
+    ${seats.map((s,i)=>`<div class="seat-row" onclick="pickSeat(${i})">
+      <div class="seat-wind">${WINDS[i]}</div>
+      ${s
+        ? `<div style="flex:1"><div style="font-size:16px">${seats_emoji(i)}</div><div class="seat-name">${esc(s)}</div></div>
+           <button class="seat-clear" onclick="clearSeat(event,${i})">✕</button>`
+        : `<div class="seat-empty" style="flex:1">點擊選擇牌友</div><div style="color:var(--text3)">›</div>`}
+    </div>`).join('')}
+    <div class="setup-label">出銃底注 ($/番)</div>
+    <input class="unit-input" type="number" id="unitHuInput" value="${S.setupUnitHu}" min="1" placeholder="例：2">
+    <div class="setup-label">自摸底注 ($/番)</div>
+    <input class="unit-input" type="number" id="unitZimoInput" value="${S.setupUnitZimo}" min="1" placeholder="例：1">
+    <button class="start-btn" ${ready?'':'disabled'} onclick="startGame()">開局！</button>
+  </div>`;
+}
+
+function seats_emoji(i) {
+  const s = S.setupSeats[i];
+  if (!s) return '';
+  const p = S.profiles.find(p=>p.name===s);
+  return p ? p.emoji : '👤';
+}
+
+function renderPickPlayer() {
+  const used = S.setupSeats.filter(Boolean);
+  const available = S.profiles.filter(p=>!used.includes(p.name));
+  return `<div class="pick-page" style="overflow-y:auto;height:100%">
+    <button class="back-btn" onclick="S.view='setup';render()">← 返回</button>
+    <div class="pick-title">選擇牌友</div>
+    ${available.map(p=>`<div class="pick-item" onclick="assignSeat('${esc(p.name)}')">
+      <span class="pick-emoji">${p.emoji}</span>
+      <span class="pick-name">${esc(p.name)}</span>
+      <span class="pick-chevron">›</span>
+    </div>`).join('')}
+    ${available.length===0?'<div class="empty-state">所有牌友均已入座</div>':''}
+    <div style="margin-top:16px;font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">或輸入臨時名字</div>
+    <div style="display:flex;gap:8px">
+      <input class="unit-input" id="tempName" type="text" placeholder="名字" style="flex:1;margin:0">
+      <button onclick="assignTemp()" style="background:var(--tab-active);color:#fff;border:none;border-radius:var(--radius-sm);padding:0 16px;font-size:14px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;font-weight:600">確認</button>
+    </div>
+    <button class="home-btn secondary" style="margin-top:12px" onclick="S.view='profiles';render()">＋ 新增牌友</button>
+  </div>`;
+}
+
+function renderProfiles() {
+  const p = S.profiles;
+  return `<div class="profiles-page" style="overflow-y:auto;height:100%">
+    <button class="back-btn" onclick="S.view='home';render()">← 返回</button>
+    <div class="page-header">
+      <div class="page-title">牌友管理</div>
+      <button class="add-btn" onclick="openEditProfile(null)">＋ 新增</button>
+    </div>
+    ${p.length===0?'<div class="empty-state">尚未新增牌友</div>':''}
+    ${p.map((pr,i)=>`<div class="profile-item">
+      <span style="font-size:26px">${pr.emoji}</span>
+      <div class="profile-info">
+        <div class="profile-name">${esc(pr.name)}</div>
+        <div class="profile-stats">${pr.totalWins||0}勝 ${pr.totalLosses||0}負 · <span style="color:${(pr.totalScore||0)>=0?'var(--green)':'var(--red)'}">${(pr.totalScore||0)>=0?'+':''}$${pr.totalScore||0}</span></div>
+      </div>
+      <button class="icon-btn" onclick="openEditProfile(${i})" style="margin-right:4px">編輯</button>
+      <button class="icon-btn del" onclick="deleteProfile(${i})">刪除</button>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderEditProfilePage() {
+  return `<div class="profiles-page" style="overflow-y:auto;height:100%">
+    <button class="back-btn" onclick="S.view='profiles';render()">← 返回</button>
+    <div class="page-header"><div class="page-title">${S.editingProfile===null?'新增牌友':'編輯牌友'}</div></div>
+    <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">選擇頭像</div>
+    <div class="emoji-grid">
+      ${EMOJIS.map(e=>`<div class="emoji-opt ${e===S.editEmoji?'sel':''}" onclick="S.editEmoji='${e}';render()">${e}</div>`).join('')}
+    </div>
+    <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">名字</div>
+    <input class="edit-input" id="profileNameInput" type="text" value="${S.editingProfile!==null?esc(S.profiles[S.editingProfile].name):''}" placeholder="輸入名字" maxlength="12">
+    <button class="save-btn" onclick="saveProfile()">儲存</button>
+  </div>`;
+}
+
+function renderGameShell() {
+  return `<div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+    <div class="page active" id="gameTabContent" style="overflow-y:auto"></div>
+  </div>`;
+}
+
+function renderTab() {
+  const el = document.getElementById('gameTabContent');
+  if (!el) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===S.tab));
+  if (S.tab==='game') el.innerHTML = renderGameTab();
+  else if (S.tab==='stats') el.innerHTML = renderStatsTab();
+  else el.innerHTML = renderLogTab();
+}
+
+function renderGameTab() {
+  const g = S.game;
+  if (!g) return '<div class="empty-state">尚未開局</div>';
+
+  // Cross layout: seats 0=East(top), 1=South(right), 2=West(bottom), 3=North(left)
+  // Display: top=player0(East), left=player3(North), right=player1(South), bottom=player2(West)
+  // Actually use absolute seat positions relative to dealer
+  // Dealer is East, so: seat[dealer]=East=top, seat[(dealer+1)%4]=South=right, seat[(dealer+2)%4]=West=bottom, seat[(dealer+3)%4]=North=left
+  const top   = g.dealer;
+  const right  = (g.dealer+1)%4;
+  const bottom = (g.dealer+2)%4;
+  const left   = (g.dealer+3)%4;
+
+  const card = (idx, size='normal') => {
+    const p = g.players[idx];
+    const isDealer = idx===g.dealer;
+    const sc = p.score;
+    return `<div class="player-card ${isDealer?'is-dealer':''}" onclick="tapWinner(${idx})">
+      ${isDealer?`<div class="dealer-badge">莊</div>`:''}
+      <div class="player-emoji">${p.emoji}</div>
+      <div class="player-name">${esc(p.name)}</div>
+      <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
+    </div>`;
+  };
+
+  const round_wind = (g.windRound||0) % 4;
+  const windLabel = WINDS[round_wind]+'圈'+WINDS[g.dealer]+'風';
+
+  return `<div class="game-page">
+    <div class="round-info">
+      <div class="round-badge"><span>${windLabel}</span><span class="arrow">›</span><span style="color:var(--text2)">第${g.round}局</span><span style="color:var(--text3);font-size:11px">出銃$${g.unitHu} 自摸$${g.unitZimo}</span>${g.dealerStreak>0?`<span style="color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</span>`:''}</div>
+    </div>
+    <div class="cross">
+      <div class="cross-top">${card(top)}</div>
+      <div class="cross-left">${card(left)}</div>
+      <div class="cross-center">
+        <div class="center-wind">${windLabel}</div>
+        <button class="liuju-btn" onclick="recordLiuju()">流局</button>
+      </div>
+      <div class="cross-right">${card(right)}</div>
+      <div class="cross-bottom">${card(bottom)}</div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px;padding-bottom:8px">
+      <button onclick="S.view='home';render()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif">⚙ 設定</button>
+      <button onclick="endGame()" style="background:none;border:none;font-size:13px;color:var(--red);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">結束本局</button>
+    </div>
+  </div>`;
+}
+
+function renderStatsTab() {
+  const g = S.game;
+  if (!g) return '<div class="empty-state" style="padding-top:60px">尚未開局</div>';
+  const players = [...g.players];
+  const maxHu = Math.max(...players.map(p=>p.huWins||0));
+  const maxZimo = Math.max(...players.map(p=>p.zimoWins||0));
+  const maxShots = Math.max(...players.map(p=>p.shots||0));
+
+  return `<div class="stats-page">
+    ${players.map((p,i)=>{
+      const isTopHu = (p.huWins||0)===maxHu&&maxHu>0;
+      const isTopZimo = (p.zimoWins||0)===maxZimo&&maxZimo>0;
+      const isTopShots = (p.shots||0)===maxShots&&maxShots>0;
+      return `<div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-emoji">${p.emoji}</span>
+          <span class="stat-name">${esc(p.name)}</span>
+          ${isTopHu?'<span class="stat-pill">食糊王</span>':''}
+          ${isTopZimo?'<span class="stat-pill">自摸王</span>':''}
+          ${isTopShots?'<span class="stat-pill">出銃王</span>':''}
+        </div>
+        <div class="stat-grid">
+          <div>
+            <div class="stat-num">${p.huWins||0}${isTopHu?'<span style="font-size:12px"> 👑</span>':''}</div>
+            <div class="stat-label">食糊</div>
+          </div>
+          <div>
+            <div class="stat-num">${p.zimoWins||0}${isTopZimo?'<span style="font-size:12px"> 👑</span>':''}</div>
+            <div class="stat-label">自摸</div>
+          </div>
+          <div>
+            <div class="stat-num">${p.shots||0}${isTopShots?'<span style="font-size:12px"> 👑</span>':''}</div>
+            <div class="stat-label">出銃</div>
+          </div>
+          <div>
+            <div class="stat-num" style="color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div>
+            <div class="stat-label">總分</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderLogTab() {
+  const g = S.game;
+  if (!g) return '<div class="empty-state" style="padding-top:60px">尚未開局</div>';
+  const logs = [...g.log].reverse(); // chronological
+
+  // Running totals
+  const running = [0,0,0,0];
+  const rows = logs.map((l,ri) => {
+    if (l.type==='流局') {
+      return `<tr class="log-row"><td><div class="wind-cell">流局</div></td>${g.players.map(()=>`<td class="score-cell zero">-</td>`).join('')}</tr>`;
+    }
+    l.payments.forEach((p,i)=>running[i]+=p*l.unit);
+    const snap = [...running];
+    return `<tr class="log-row">
+      <td><div class="wind-cell">${WINDS[l.dealer]||'?'}${l.dealerStreak>0?'×'+(l.dealerStreak+1):''}</div></td>
+      ${g.players.map((p,i)=>`<td class="score-cell ${scoreClass(l.payments[i])}">${l.payments[i]!==0?fmt(l.payments[i]*l.unit):'0'}</td>`).join('')}
+    </tr>`;
+  });
+
+  return `<div class="log-page" style="overflow-x:auto">
+    <table class="log-table">
+      <thead class="log-header"><tr>
+        <td style="width:44px"></td>
+        ${g.players.map(p=>`<td class="player-col"><div>${p.emoji}</div><div>${esc(p.name)}</div><div style="font-size:12px;font-weight:700;color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div></td>`).join('')}
+      </tr></thead>
+      <tbody>
+        <tr class="log-row"><td></td>${g.players.map(()=>`<td class="score-cell zero">0</td>`).join('')}</tr>
+        ${rows.join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+// ── Win modal ────────────────────────────────────────────────────────────────
+function renderWinModal() {
+  const g = S.game;
+  const w = S.winInput;
+  const isZimo = w.type==='zimo';
+  const preview = buildPreview(g, w);
+  const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
+  const canConfirm = allFansSet && w.winners.length > 0 && (isZimo || w.discard !== null);
+
+  // Build per-winner fan picker rows
+  const fanPickerRows = w.winners.map(wi => {
+    const p = g.players[wi];
+    const curFan = w.fans[wi] || 1;
+    return `
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px">${p.emoji} ${esc(p.name)} 番數</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button ontouchstart="startRepeat(${wi},-1)" ontouchend="stopRepeat()" onmousedown="startRepeat(${wi},-1)" onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+          style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">−</button>
+        <div style="flex:1;position:relative">
+          <input id="fan-input-${wi}" type="number" min="1" max="250" value="${curFan}"
+            oninput="fanTyped(${wi},this.value)"
+            style="width:100%;height:52px;text-align:center;font-size:26px;font-weight:900;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);color:var(--orange);font-family:'Noto Sans TC',sans-serif;-moz-appearance:textfield;outline:none;">
+        </div>
+        <button ontouchstart="startRepeat(${wi},1)" ontouchend="stopRepeat()" onmousedown="startRepeat(${wi},1)" onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+          style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">＋</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Build event description lines
+  const eventLines = preview ? preview.events.map(ev => {
+    const wn = g.players[ev.winner].name;
+    const ln = g.players[ev.loser].name;
+    const typeLabel = ev.isZimo ? '自摸' : '食糊';
+    const dealerPart = ev.dealerBonusPay > 0 ? ` + ${ev.dealerBonusPay}番連莊` : '';
+    if (ev.type==='normal') {
+      return `<div class="preview-row"><span>${wn}←${ln}</span><span>5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+    }
+    if (ev.type==='拉') {
+      return `<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${ev.cumulative - ev.total}×0.5)=${ev.pullBonus}拉 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+    }
+    if (ev.type==='剪') {
+      return `<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${ev.prevCumulative}×0.5)=${ev.clawback}番剪 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+    }
+    return '';
+  }).join('') : '';
+
+  document.getElementById('winSheetContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+      <div class="modal-title">${w.winners.length>0?g.players[w.winners[0]].emoji+' '+esc(g.players[w.winners[0]].name)+' 胡牌':'胡牌'}</div>
+      <button onclick="closeWinModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
+    </div>
+    <div class="modal-sub">第${g.round}局 · 出銃$${g.unitHu}/番 · 自摸$${g.unitZimo}/番 · ${g.dealerStreak>0?`連莊×${g.dealerStreak+1}`:WINDS[g.dealer]+'風'}</div>
+
+    <div class="modal-section">胡牌方式</div>
+    <div class="type-row">
+      <button class="type-btn ${!isZimo?'sel':''}" onclick="setWinType('hu')">食糊（出銃）</button>
+      <button class="type-btn ${isZimo?'sel':''}" onclick="setWinType('zimo')">自摸</button>
+    </div>
+
+    ${!isZimo?`
+    <div class="picker-row" style="margin-top:10px">
+      <div class="picker-col">
+        <div class="picker-col-title">出銃者</div>
+        ${g.players.map((p,i)=>w.winners.includes(i)?'':
+          `<div class="picker-item ${w.discard===i?'sel':''}" onclick="setDiscard(${i})">${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}</div>`
+        ).join('')}
+      </div>
+      <div class="picker-col">
+        <div class="picker-col-title">額外贏家（可選）</div>
+        ${g.players.map((p,i)=>{
+          if(w.winners[0]===i||w.discard===i) return '';
+          const isSel = w.winners.indexOf(i) > 0;
+          return `<div class="picker-item ${isSel?'sel':''}" onclick="toggleExtraWinner(${i})">${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}</div>`;
+        }).join('')}
+      </div>
+    </div>`:''}
+
+    <div class="modal-section">各贏家番數</div>
+    ${fanPickerRows || '<div style="color:var(--text3);font-size:13px;padding:8px 0">請先選擇贏家</div>'}
+
+    ${preview?`<div class="preview-bar" id="win-preview">
+      ${eventLines}
+      <div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">
+        ${preview.payments.map((pay,i)=>pay!==0?`<div class="preview-row preview-total"><span>${g.players[i].emoji} ${g.players[i].name}</span><span style="color:${pay>0?'var(--green)':'var(--red)'}">${pay>0?'+':''}$${pay*preview.unit}</span></div>`:'').join('')}
+      </div>
+    </div>`:`<div class="preview-bar" id="win-preview" style="color:var(--text3);font-size:13px">選擇番數後顯示計算</div>`}
+
+    <button class="confirm-btn" id="win-confirm" ${!canConfirm?'disabled':''} onclick="confirmWin()">確認胡牌</button>
+  `;
+}
+
+// ── Fan input helpers ─────────────────────────────────────────────────────────
+let _repeatTimer = null;
+let _repeatInterval = null;
+
+function startRepeat(wi, delta) {
+  adjustFan(wi, delta);
+  _repeatTimer = setTimeout(() => {
+    _repeatInterval = setInterval(() => adjustFan(wi, delta), 80);
+  }, 400);
+}
+
+function stopRepeat() {
+  clearTimeout(_repeatTimer);
+  clearInterval(_repeatInterval);
+  _repeatTimer = null;
+  _repeatInterval = null;
+}
+
+function fanTyped(wi, val) {
+  const n = parseInt(val);
+  if (isNaN(n) || n < 1) return;
+  S.winInput.fans[wi] = Math.min(250, n);
+  updatePreviewOnly();
+}
+
+function adjustFan(wi, delta) {
+  const cur = S.winInput.fans[wi] || 1;
+  const newVal = Math.max(1, Math.min(250, cur + delta));
+  S.winInput.fans[wi] = newVal;
+  const el = document.getElementById(`fan-input-${wi}`);
+  if (el) el.value = newVal;
+  updatePreviewOnly();
+}
+
+function updatePreviewOnly() {
+  // Re-render just the preview and confirm button without full modal re-render
+  const g = S.game;
+  const w = S.winInput;
+  const preview = buildPreview(g, w);
+  const isZimo = w.type === 'zimo';
+  const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
+  const canConfirm = allFansSet && w.winners.length > 0 && (isZimo || w.discard !== null);
+
+  // Update fan display numbers
+  w.winners.forEach(wi => {
+    const numEl = document.getElementById(`fan-num-${wi}`);
+    if (numEl) numEl.textContent = w.fans[wi] || 1;
+  });
+
+  const previewEl = document.getElementById('win-preview');
+  const confirmEl = document.getElementById('win-confirm');
+  if (!previewEl || !confirmEl) return;
+
+  if (preview) {
+    const eventLines = preview.events.map(ev => {
+      const wn = g.players[ev.winner].name;
+      const ln = g.players[ev.loser].name;
+      const typeLabel = ev.isZimo ? '自摸' : '食糊';
+      const dealerPart = ev.dealerBonusPay > 0 ? ` + ${ev.dealerBonusPay}番連莊` : '';
+      if (ev.type==='normal') return `<div class="preview-row"><span>${wn}←${ln}</span><span>5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+      if (ev.type==='拉') return `<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${ev.cumulative - ev.total}×0.5)=${ev.pullBonus}拉 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+      if (ev.type==='剪') return `<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${ev.prevCumulative}×0.5)=${ev.clawback}番剪 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+      return '';
+    }).join('');
+    const payLines = preview.payments.map((pay,i)=>pay!==0?`<div class="preview-row preview-total"><span>${g.players[i].emoji} ${g.players[i].name}</span><span style="color:${pay>0?'var(--green)':'var(--red)'}">${pay>0?'+':''}$${pay*preview.unit}</span></div>`:'').join('');
+    previewEl.innerHTML = eventLines + `<div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">${payLines}</div>`;
+    previewEl.style.color = '';
+  } else {
+    previewEl.innerHTML = '選擇番數後顯示計算';
+    previewEl.style.color = 'var(--text3)';
+  }
+  confirmEl.disabled = !canConfirm;
+}
+
+function openWinModal() {
+  document.getElementById('winModal').classList.add('open');
+  renderWinModal();
+}
+function closeWinModal() {
+  document.getElementById('winModal').classList.remove('open');
+}
+
+// ── Edit profile modal ────────────────────────────────────────────────────────
+function openEditProfile(idx) {
+  S.editingProfile = idx;
+  S.editEmoji = idx===null ? EMOJIS[Math.floor(Math.random()*EMOJIS.length)] : S.profiles[idx].emoji;
+  S.view = 'editProfile';
+  render();
+}
+
+// ── Actions ──────────────────────────────────────────────────────────────────
+function switchTab(t) {
+  S.tab = t;
+  renderTab();
+}
+
+function tapWinner(i) {
+  S.winInput = { type:'hu', winners:[i], discard:null, fans:{[i]:1} };
+  openWinModal();
+}
+
+function setWinType(t) {
+  S.winInput.type=t;
+  S.winInput.discard=null;
+  if(t==='zimo') S.winInput.winners=S.winInput.winners.slice(0,1);
+  // preserve fans for remaining winners
+  renderWinModal();
+}
+function setDiscard(i) { S.winInput.discard=i; renderWinModal(); }
+
+function adjustFan(wi, delta) {
+  const cur = S.winInput.fans[wi] || 1;
+  const newVal = Math.max(1, Math.min(250, cur + delta));
+  S.winInput.fans[wi] = newVal;
+  const el = document.getElementById(`fan-input-${wi}`);
+  if (el) el.value = newVal;
+  updatePreviewOnly();
+}
+
+function toggleExtraWinner(i) {
+  const w=S.winInput;
+  const idx = w.winners.indexOf(i);
+  if (idx > 0) {
+    w.winners = w.winners.filter(x=>x!==i);
+    delete w.fans[i];
+  } else if (w.winners.length < 3) {
+    w.winners = [...w.winners, i];
+    w.fans[i] = 1;
+  }
+  renderWinModal();
+}
+
+function confirmWin() {
+  const w=S.winInput;
+  const isZimo = w.type==='zimo';
+  const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
+  if(!allFansSet || w.winners.length===0 || (!isZimo && w.discard===null)) return;
+  S.game=applyHand(S.game,{type:w.type,winners:w.winners,discardIdx:w.discard,fans:w.fans});
+  saveGame(S.game);
+  closeWinModal();
+  renderTab();
+}
+
+function recordLiuju() {
+  S.game=applyHand(S.game,{type:'liuju'});
+  saveGame(S.game);
+  renderTab();
+}
+
+function goSetup() { S.view='setup'; S.setupSeats=[null,null,null,null]; render(); }
+function resumeGame() { S.view='game'; S.tab='game'; render(); }
+
+function endGame() {
+  if(!confirm('確定結束本局？')) return;
+  const g=S.game;
+  g.players.forEach(p=>{
+    const idx=S.profiles.findIndex(pr=>pr.name===p.name);
+    if(idx>=0){
+      S.profiles[idx].totalScore=(S.profiles[idx].totalScore||0)+p.score;
+      S.profiles[idx].totalWins=(S.profiles[idx].totalWins||0)+p.wins;
+      S.profiles[idx].totalLosses=(S.profiles[idx].totalLosses||0)+p.losses;
+    }
+  });
+  saveProfiles(S.profiles);
+  clearGame();
+  S.game=null;
+  S.view='home';
+  render();
+}
+
+function startGame() {
+  const seats=S.setupSeats;
+  if(seats.some(s=>!s)) return;
+  const unitHu=parseInt(document.getElementById('unitHuInput').value)||2;
+  const unitZimo=parseInt(document.getElementById('unitZimoInput').value)||1;
+  S.setupUnitHu=unitHu;
+  S.setupUnitZimo=unitZimo;
+  S.game={
+    players:seats.map(name=>{
+      const p=S.profiles.find(pr=>pr.name===name);
+      return {name,emoji:p?p.emoji:'👤',score:0,wins:0,losses:0,huWins:0,zimoWins:0,shots:0};
+    }),
+    dealer:0,dealerStreak:0,round:1,windRound:0,unitHu,unitZimo,chains:{},currentWinners:[],log:[]
+  };
+  saveGame(S.game);
+  S.setupSeats=[null,null,null,null];
+  S.view='game';S.tab='game';
+  render();
+}
+
+function pickSeat(i) { S.pickingFor=i; S.view='pickPlayer'; render(); }
+function clearSeat(e,i) { e.stopPropagation(); S.setupSeats[i]=null; render(); }
+function assignSeat(name) { S.setupSeats[S.pickingFor]=name; S.view='setup'; render(); }
+function assignTemp() {
+  const n=document.getElementById('tempName')?.value?.trim();
+  if(!n) return;
+  S.setupSeats[S.pickingFor]=n;
+  S.view='setup'; render();
+}
+
+function deleteProfile(i) {
+  if(!confirm('確定刪除？')) return;
+  S.profiles.splice(i,1);
+  saveProfiles(S.profiles);
+  render();
+}
+
+function saveProfile() {
+  const name=document.getElementById('profileNameInput')?.value?.trim();
+  if(!name) return;
+  if(S.editingProfile===null) {
+    S.profiles.push({name,emoji:S.editEmoji,totalScore:0,totalWins:0,totalLosses:0});
+  } else {
+    S.profiles[S.editingProfile].name=name;
+    S.profiles[S.editingProfile].emoji=S.editEmoji;
+  }
+  saveProfiles(S.profiles);
+  S.view='profiles';
+  render();
+}
+
+// Init
+if(S.game) { S.view='game'; }
+render();
+</script>
+</body>
+</html>
