@@ -48,21 +48,20 @@
   .round-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--bg2); border-radius: 99px; padding: 4px 14px; font-size: 13px; color: var(--text2); font-weight: 500; }
   .round-badge .arrow { color: var(--orange); font-size: 12px; }
 
-  /* Cross layout */
-  .cross { position: relative; display: grid; grid-template-columns: 1fr 96px 1fr; grid-template-rows: auto auto auto; gap: 8px; padding: 4px 0; }
-  .cross-top    { grid-column: 2; grid-row: 1; }
-  .cross-left   { grid-column: 1; grid-row: 2; }
-  .cross-center { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-  .cross-right  { grid-column: 3; grid-row: 2; }
-  .cross-bottom { grid-column: 2; grid-row: 3; }
+  /* Cross layout — all 4 cards same size */
+  .cross-outer { display: grid; grid-template-columns: 80px 80px 80px; grid-template-rows: auto auto auto; gap: 6px; padding: 4px 0; justify-content: center; }
+  .cross-row { contents: ''; }
+  .cross-cell { min-width: 0; }
+  .cross-center-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .cross-spacer { display: none; }
 
-  .player-card { background: var(--card); border-radius: var(--radius); padding: 10px 6px; text-align: center; cursor: pointer; transition: transform 0.1s; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .player-card { background: var(--card); border-radius: var(--radius); padding: 8px 4px; text-align: center; cursor: pointer; transition: transform 0.1s; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
   .player-card:active { transform: scale(0.97); }
   .player-card.is-dealer { box-shadow: 0 2px 12px rgba(212,115,42,0.18); }
-  .dealer-badge { position: absolute; top: 6px; left: 6px; background: var(--dealer-bg); color: var(--dealer-text); font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 5px; }
-  .player-emoji { font-size: 20px; margin-bottom: 2px; }
-  .player-name { font-size: 11px; color: var(--text2); margin-bottom: 4px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .player-score { font-size: 22px; font-weight: 900; line-height: 1; }
+  .dealer-badge { position: absolute; top: 4px; left: 4px; background: var(--dealer-bg); color: var(--dealer-text); font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 4px; }
+  .player-emoji { font-size: 18px; margin-bottom: 2px; }
+  .player-name { font-size: 10px; color: var(--text2); margin-bottom: 3px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player-score { font-size: 18px; font-weight: 900; line-height: 1; }
   .player-score.pos { color: var(--green); }
   .player-score.neg { color: var(--red); }
   .player-score.zero { color: var(--text3); }
@@ -212,6 +211,34 @@
   </div>
 </div>
 
+<!-- 詐胡 modal -->
+<div class="modal-overlay" id="zhaHuModal">
+  <div class="modal-sheet">
+    <div id="zhaHuSheetContent"></div>
+  </div>
+</div>
+
+<!-- 獎罰 modal -->
+<div class="modal-overlay" id="penaltyModal">
+  <div class="modal-sheet">
+    <div id="penaltySheetContent"></div>
+  </div>
+</div>
+
+<!-- Swap modal -->
+<div class="modal-overlay" id="swapModal">
+  <div class="modal-sheet">
+    <div id="swapSheetContent"></div>
+  </div>
+</div>
+
+<!-- 埋單 modal -->
+<div class="modal-overlay" id="maidanModal">
+  <div class="modal-sheet">
+    <div id="maidanSheetContent"></div>
+  </div>
+</div>
+
 <script>
 const WINDS = ['東','南','西','北'];
 const EMOJIS = ['🐭','🐮','🐯','🐰','🐲','🐍','🐴','🐏','🐵','🐔','🐶','🐷','😺','🦊','🐻','🐼','🐨','🦁'];
@@ -249,6 +276,8 @@ let S = {
   setupUnitZimo: 1,
   pickingFor: null,
   winInput: { type:'hu', winners:[], discard:null, fans:{} },
+  penaltyInput: { payer:null, receiver:'all', di:1, dir:'pay' },
+  swapInput: { seatIdx:null, newPlayer:null },
   editEmoji: '🐶',
 };
 
@@ -351,7 +380,111 @@ function applyHand(game, result) {
     : `${winners.map(pname).join('、')} 胡 ${pname(discardIdx)} 出 ${fanDesc}`;
 
   const log = { type:isZimo?'自摸':'食糊', desc, payments, unit, round:game.round, events, dealer:prevDealer, dealerStreak:n };
-  return { ...game, players, dealer:newDealer, dealerStreak:newStreak, windRound, chains:newChains, currentWinners:winners, log:[log,...game.log], round:game.round+1 };
+  const newGame = { ...game, players, dealer:newDealer, dealerStreak:newStreak, windRound, chains:newChains, currentWinners:winners, log:[log,...game.log], round:game.round+1 };
+
+  // Auto-trigger 埋單 after 北圈 completes (windRound advances to 4) with no 連莊
+  if (windRound >= 4 && (game.windRound||0) < 4 && newStreak === 0) {
+    setTimeout(() => openMaidanModal(true), 300);
+  }
+
+  return newGame;
+}
+
+// ── 詐胡 logic ────────────────────────────────────────────────────────────────
+// 詐胡: payer loses 30番 (no 底) to each of 3 others
+// Subjected to 連莊 and 拉/剪
+// Dealer does NOT rotate, dealerStreak unchanged, round increments
+// currentWinners unchanged (survivors keep their chains)
+function applyZhaHu(game, payerIdx) {
+  const dealer = game.dealer;
+  const n = game.dealerStreak;
+  const bonus = 2 * n + 1;
+  const chains = game.chains || {};
+  const currentWinners = game.currentWinners || [];
+  const unit = game.unitHu || game.unit || 1;
+  const ZHA_FAN = 30;
+  const payments = [0,0,0,0];
+  const newChains = { ...chains };
+  const events = [];
+
+  for (let wIdx = 0; wIdx < 4; wIdx++) {
+    if (wIdx === payerIdx) continue;
+    const pairKey = `${wIdx}-${payerIdx}`;   // winner→loser (wIdx wins from payer)
+    const reverseKey = `${payerIdx}-${wIdx}`; // payer's chain against this receiver
+
+    const winnerIsDealer = wIdx === dealer;
+    const loserIsDealer = payerIdx === dealer;
+    const dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
+    let basePay = ZHA_FAN + dealerBonusPay; // no 底
+
+    const prevCumulative = chains[pairKey] || 0;       // receiver had winning chain on payer
+    const reverseCumulative = chains[reverseKey] || 0; // payer had winning chain on receiver
+
+    let thisPay = basePay;
+    let newCumulative = basePay;
+
+    if (reverseCumulative > 0 && currentWinners.includes(payerIdx)) {
+      // payer was the current winner — receivers 剪 payer's chain
+      const clawback = Math.floor(reverseCumulative * 0.5);
+      thisPay = basePay + clawback;
+      newCumulative = basePay;
+      delete newChains[reverseKey];
+      events.push({ type:'剪', winner:wIdx, loser:payerIdx, clawback, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumulative, isZimo:false });
+    } else if (prevCumulative > 0 && currentWinners.includes(wIdx)) {
+      // receiver was current winner and had a chain on payer — 拉
+      const pullBonus = Math.floor(prevCumulative * 0.5);
+      thisPay = basePay + pullBonus;
+      newCumulative = prevCumulative + thisPay;
+      events.push({ type:'拉', winner:wIdx, loser:payerIdx, pullBonus, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, isZimo:false });
+    } else {
+      events.push({ type:'normal', winner:wIdx, loser:payerIdx, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, isZimo:false });
+    }
+
+    payments[wIdx] += thisPay;
+    payments[payerIdx] -= thisPay;
+    newChains[pairKey] = newCumulative;
+  }
+
+  const pname = i => game.players[i].name;
+  const players = game.players.map((p,i) => ({
+    ...p,
+    score: p.score + payments[i] * unit,
+    losses: p.losses + (i === payerIdx ? 1 : 0),
+  }));
+  const desc = `${pname(payerIdx)} 詐胡`;
+  const log = { type:'詐胡', desc, payments, unit, round:game.round, events, dealer, dealerStreak:n };
+  // dealer/dealerStreak/windRound/currentWinners all unchanged
+  return { ...game, players, chains:newChains, log:[log,...game.log], round:game.round+1 };
+}
+
+// ── 獎罰 logic ────────────────────────────────────────────────────────────────
+// 獎罰: payer pays 1底(5番) or 2底(10番) to 1 or all 3 others
+// Uses 出銃 rate, NOT subjected to 拉/剪 or 連莊, chains unchanged
+function applyPenalty(game, subjectIdx, otherIdx, di, dir) {
+  // dir='pay': subject pays others; dir='collect': subject collects from others
+  const fan = di * 5;
+  const unit = game.unitHu || game.unit || 1;
+  const payments = [0,0,0,0];
+  const others = otherIdx === 'all' ? [0,1,2,3].filter(i=>i!==subjectIdx) : [otherIdx];
+
+  others.forEach(oIdx => {
+    if (dir === 'pay') {
+      payments[subjectIdx] -= fan;
+      payments[oIdx] += fan;
+    } else {
+      payments[subjectIdx] += fan;
+      payments[oIdx] -= fan;
+    }
+  });
+
+  const pname = i => game.players[i].name;
+  const otherDesc = otherIdx === 'all' ? '所有人' : pname(otherIdx);
+  const desc = dir === 'pay'
+    ? `${pname(subjectIdx)} 獎罰 付${di}底 → ${otherDesc}`
+    : `${pname(subjectIdx)} 獎罰 收${di}底 ← ${otherDesc}`;
+  const players = game.players.map((p,i) => ({ ...p, score: p.score + payments[i]*unit }));
+  const log = { type:'獎罰', desc, payments, unit, round:game.round, events:[], dealer:game.dealer, dealerStreak:game.dealerStreak };
+  return { ...game, players, log:[log,...game.log], round:game.round+1 };
 }
 
 function buildPreview(g, w) {
@@ -530,47 +663,48 @@ function renderGameTab() {
   const g = S.game;
   if (!g) return '<div class="empty-state">尚未開局</div>';
 
-  // Cross layout: seats 0=East(top), 1=South(right), 2=West(bottom), 3=North(left)
-  // Display: top=player0(East), left=player3(North), right=player1(South), bottom=player2(West)
-  // Actually use absolute seat positions relative to dealer
-  // Dealer is East, so: seat[dealer]=East=top, seat[(dealer+1)%4]=South=right, seat[(dealer+2)%4]=West=bottom, seat[(dealer+3)%4]=North=left
-  const top   = g.dealer;
-  const right  = (g.dealer+1)%4;
-  const bottom = (g.dealer+2)%4;
-  const left   = (g.dealer+3)%4;
+  // Fixed positions: player[0]=top, player[1]=right, player[2]=bottom, player[3]=left — NEVER rotate
+  const round_wind = (g.windRound||0) % 4;
+  const windCircle = WINDS[round_wind]+'圈';
 
-  const card = (idx, size='normal') => {
+  const card = (idx) => {
     const p = g.players[idx];
     const isDealer = idx===g.dealer;
     const sc = p.score;
+    // Wind position relative to dealer: dealer=東, dealer+1=南, dealer+2=西, dealer+3=北
+    const relWind = WINDS[(idx - g.dealer + 4) % 4];
+    const posLabel = `${windCircle}${relWind}位`;
     return `<div class="player-card ${isDealer?'is-dealer':''}" onclick="tapWinner(${idx})">
       ${isDealer?`<div class="dealer-badge">莊</div>`:''}
       <div class="player-emoji">${p.emoji}</div>
       <div class="player-name">${esc(p.name)}</div>
+      <div style="font-size:9px;color:var(--text3);margin-bottom:2px">${posLabel}</div>
       <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
     </div>`;
   };
 
-  const round_wind = (g.windRound||0) % 4;
-  const windLabel = WINDS[round_wind]+'圈'+WINDS[g.dealer]+'風';
+  const windLabel = windCircle+WINDS[g.dealer]+'風';
 
   return `<div class="game-page">
     <div class="round-info">
       <div class="round-badge"><span>${windLabel}</span><span class="arrow">›</span><span style="color:var(--text2)">第${g.round}局</span><span style="color:var(--text3);font-size:11px">出銃$${g.unitHu} 自摸$${g.unitZimo}</span>${g.dealerStreak>0?`<span style="color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</span>`:''}</div>
     </div>
-    <div class="cross">
-      <div class="cross-top">${card(top)}</div>
-      <div class="cross-left">${card(left)}</div>
-      <div class="cross-center">
+    <div class="cross-outer">
+      <div style="grid-column:2;grid-row:1">${card(0)}</div>
+      <div style="grid-column:1;grid-row:2">${card(3)}</div>
+      <div class="cross-center-col" style="grid-column:2;grid-row:2">
         <div class="center-wind">${windLabel}</div>
         <button class="liuju-btn" onclick="recordLiuju()">流局</button>
       </div>
-      <div class="cross-right">${card(right)}</div>
-      <div class="cross-bottom">${card(bottom)}</div>
+      <div style="grid-column:3;grid-row:2">${card(1)}</div>
+      <div style="grid-column:2;grid-row:3">${card(2)}</div>
     </div>
     <div style="display:flex;justify-content:flex-end;margin-top:8px;padding-bottom:8px">
-      <button onclick="S.view='home';render()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif">⚙ 設定</button>
-      <button onclick="endGame()" style="background:none;border:none;font-size:13px;color:var(--red);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">結束本局</button>
+      ${g.log.length>0?`<button onclick="undoLast()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-right:auto">↩ 撤銷</button>`:''}
+      <button onclick="openMaidanModal()" style="background:none;border:none;font-size:13px;color:var(--tab-active);cursor:pointer;font-family:'Noto Sans TC',sans-serif">💰 埋單</button>
+      <button onclick="openSwapModal()" style="background:none;border:none;font-size:13px;color:var(--orange);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⇄ 換人</button>
+      <button onclick="S.view='home';render()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⚙</button>
+      <button onclick="endGame()" style="background:none;border:none;font-size:13px;color:var(--red);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">結束</button>
     </div>
   </div>`;
 }
@@ -578,13 +712,14 @@ function renderGameTab() {
 function renderStatsTab() {
   const g = S.game;
   if (!g) return '<div class="empty-state" style="padding-top:60px">尚未開局</div>';
-  const players = [...g.players];
-  const maxHu = Math.max(...players.map(p=>p.huWins||0));
-  const maxZimo = Math.max(...players.map(p=>p.zimoWins||0));
-  const maxShots = Math.max(...players.map(p=>p.shots||0));
+  const allPlayers = [...g.players, ...(g.bench||[])];
+  const maxHu = Math.max(...allPlayers.map(p=>p.huWins||0));
+  const maxZimo = Math.max(...allPlayers.map(p=>p.zimoWins||0));
+  const maxShots = Math.max(...allPlayers.map(p=>p.shots||0));
 
   return `<div class="stats-page">
-    ${players.map((p,i)=>{
+    ${g.bench&&g.bench.length>0?`<div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:8px;letter-spacing:0.5px">現在在座</div>`:''}
+    ${g.players.map((p,i)=>{
       const isTopHu = (p.huWins||0)===maxHu&&maxHu>0;
       const isTopZimo = (p.zimoWins||0)===maxZimo&&maxZimo>0;
       const isTopShots = (p.shots||0)===maxShots&&maxShots>0;
@@ -592,30 +727,34 @@ function renderStatsTab() {
         <div class="stat-header">
           <span class="stat-emoji">${p.emoji}</span>
           <span class="stat-name">${esc(p.name)}</span>
+          ${i===g.dealer?'<span class="stat-pill">莊</span>':''}
           ${isTopHu?'<span class="stat-pill">食糊王</span>':''}
           ${isTopZimo?'<span class="stat-pill">自摸王</span>':''}
           ${isTopShots?'<span class="stat-pill">出銃王</span>':''}
         </div>
         <div class="stat-grid">
-          <div>
-            <div class="stat-num">${p.huWins||0}${isTopHu?'<span style="font-size:12px"> 👑</span>':''}</div>
-            <div class="stat-label">食糊</div>
-          </div>
-          <div>
-            <div class="stat-num">${p.zimoWins||0}${isTopZimo?'<span style="font-size:12px"> 👑</span>':''}</div>
-            <div class="stat-label">自摸</div>
-          </div>
-          <div>
-            <div class="stat-num">${p.shots||0}${isTopShots?'<span style="font-size:12px"> 👑</span>':''}</div>
-            <div class="stat-label">出銃</div>
-          </div>
-          <div>
-            <div class="stat-num" style="color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div>
-            <div class="stat-label">總分</div>
-          </div>
+          <div><div class="stat-num">${p.huWins||0}${isTopHu?'<span style="font-size:12px"> 👑</span>':''}</div><div class="stat-label">食糊</div></div>
+          <div><div class="stat-num">${p.zimoWins||0}${isTopZimo?'<span style="font-size:12px"> 👑</span>':''}</div><div class="stat-label">自摸</div></div>
+          <div><div class="stat-num">${p.shots||0}${isTopShots?'<span style="font-size:12px"> 👑</span>':''}</div><div class="stat-label">出銃</div></div>
+          <div><div class="stat-num" style="color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div><div class="stat-label">總分</div></div>
         </div>
       </div>`;
     }).join('')}
+    ${g.bench&&g.bench.length>0?`
+    <div style="font-size:11px;color:var(--text3);font-weight:600;margin:12px 0 8px;letter-spacing:0.5px">已離座</div>
+    ${g.bench.map(p=>`<div class="stat-card" style="opacity:0.7">
+      <div class="stat-header">
+        <span class="stat-emoji">${p.emoji}</span>
+        <span class="stat-name">${esc(p.name)}</span>
+        <span class="stat-pill">已離座</span>
+      </div>
+      <div class="stat-grid">
+        <div><div class="stat-num">${p.huWins||0}</div><div class="stat-label">食糊</div></div>
+        <div><div class="stat-num">${p.zimoWins||0}</div><div class="stat-label">自摸</div></div>
+        <div><div class="stat-num">${p.shots||0}</div><div class="stat-label">出銃</div></div>
+        <div><div class="stat-num" style="color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div><div class="stat-label">總分</div></div>
+      </div>
+    </div>`).join('')}`:''}
   </div>`;
 }
 
@@ -624,17 +763,34 @@ function renderLogTab() {
   if (!g) return '<div class="empty-state" style="padding-top:60px">尚未開局</div>';
   const logs = [...g.log].reverse(); // chronological
 
-  // Running totals
-  const running = [0,0,0,0];
-  const rows = logs.map((l,ri) => {
-    if (l.type==='流局') {
-      return `<tr class="log-row"><td><div class="wind-cell">流局</div></td>${g.players.map(()=>`<td class="score-cell zero">-</td>`).join('')}</tr>`;
+  // All players ever in this game (current + bench)
+  const allPlayers = [...g.players, ...(g.bench||[])];
+
+  // Build name→score running totals
+  const running = {};
+  allPlayers.forEach(p => running[p.name] = 0);
+
+  const rows = logs.map(l => {
+    if (l.type === '流局') {
+      return `<tr class="log-row"><td><div class="wind-cell">流局</div></td>${allPlayers.map(()=>`<td class="score-cell zero">-</td>`).join('')}</tr>`;
     }
-    l.payments.forEach((p,i)=>running[i]+=p*l.unit);
-    const snap = [...running];
+    if (l.type === '換人') {
+      return `<tr class="log-row" style="background:var(--bg2)"><td><div class="wind-cell" style="font-size:9px">換人</div></td>${allPlayers.map(()=>`<td class="score-cell zero" style="font-size:10px">-</td>`).join('')}</tr>`;
+    }
+    // l.payments is indexed by seat. Need to map seat→name using the snapshot at time of hand.
+    // We store dealer/dealerStreak but not the full player list per hand.
+    // Best approach: match current player names to payments by seat index for current players,
+    // bench players get 0 for rounds they weren't seated.
+    // Since bench players' payments were already applied to their score when they were active,
+    // we track cumulative score changes per name using the payments + unit stored in log.
+    g.players.forEach((p,i) => { if (l.payments[i]) running[p.name] = (running[p.name]||0) + l.payments[i]*l.unit; });
     return `<tr class="log-row">
       <td><div class="wind-cell">${WINDS[l.dealer]||'?'}${l.dealerStreak>0?'×'+(l.dealerStreak+1):''}</div></td>
-      ${g.players.map((p,i)=>`<td class="score-cell ${scoreClass(l.payments[i])}">${l.payments[i]!==0?fmt(l.payments[i]*l.unit):'0'}</td>`).join('')}
+      ${allPlayers.map(p => {
+        const seatIdx = g.players.findIndex(cp=>cp.name===p.name);
+        const pay = seatIdx >= 0 ? (l.payments[seatIdx]||0) : 0;
+        return `<td class="score-cell ${scoreClass(pay)}">${pay!==0?fmt(pay*l.unit):'0'}</td>`;
+      }).join('')}
     </tr>`;
   });
 
@@ -642,10 +798,10 @@ function renderLogTab() {
     <table class="log-table">
       <thead class="log-header"><tr>
         <td style="width:44px"></td>
-        ${g.players.map(p=>`<td class="player-col"><div>${p.emoji}</div><div>${esc(p.name)}</div><div style="font-size:12px;font-weight:700;color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div></td>`).join('')}
+        ${allPlayers.map(p=>`<td class="player-col"><div>${p.emoji}</div><div>${esc(p.name)}</div><div style="font-size:12px;font-weight:700;color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div></td>`).join('')}
       </tr></thead>
       <tbody>
-        <tr class="log-row"><td></td>${g.players.map(()=>`<td class="score-cell zero">0</td>`).join('')}</tr>
+        <tr class="log-row"><td></td>${allPlayers.map(()=>`<td class="score-cell zero">0</td>`).join('')}</tr>
         ${rows.join('')}
       </tbody>
     </table>
@@ -709,8 +865,12 @@ function renderWinModal() {
 
     <div class="modal-section">胡牌方式</div>
     <div class="type-row">
-      <button class="type-btn ${!isZimo?'sel':''}" onclick="setWinType('hu')">食糊（出銃）</button>
+      <button class="type-btn ${!isZimo?'sel':''}" onclick="setWinType('hu')">食糊</button>
       <button class="type-btn ${isZimo?'sel':''}" onclick="setWinType('zimo')">自摸</button>
+    </div>
+    <div class="type-row" style="margin-top:6px">
+      <button class="type-btn" onclick="closeWinModal();openZhaHuModal(${w.winners[0]})" style="color:var(--red);border-color:#f5c5c5">詐胡</button>
+      <button class="type-btn" onclick="closeWinModal();openPenaltyModal(${w.winners[0]})" style="color:var(--orange);border-color:#ffe0b2">獎罰</button>
     </div>
 
     ${!isZimo?`
@@ -827,12 +987,336 @@ function closeWinModal() {
   document.getElementById('winModal').classList.remove('open');
 }
 
+// ── 埋單 modal ────────────────────────────────────────────────────────────────
+function openMaidanModal(autoTriggered) {
+  document.getElementById('maidanModal').classList.add('open');
+  renderMaidanModal(autoTriggered);
+}
+function closeMaidanModal() { document.getElementById('maidanModal').classList.remove('open'); }
+
+function renderMaidanModal(autoTriggered) {
+  const g = S.game;
+  const allPlayers = [...g.players, ...(g.bench||[])];
+  const total = allPlayers.reduce((s,p)=>s+p.score, 0);
+
+  document.getElementById('maidanSheetContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="modal-title">💰 埋單</div>
+      <button onclick="closeMaidanModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">關閉</button>
+    </div>
+    ${autoTriggered?`<div style="background:#fff7ed;border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px;font-size:13px;color:var(--orange);font-weight:500">🎉 一局完成！</div>`:''}
+    <div class="modal-sub">第${g.round-1}局完 · ${WINDS[(g.windRound-1+4)%4]}圈結束</div>
+    ${allPlayers.map(p=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--bg2)">
+      <span style="font-size:22px">${p.emoji}</span>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600">${esc(p.name)}</div>
+        ${(g.bench||[]).find(b=>b.name===p.name)?`<div style="font-size:10px;color:var(--text3)">已離座</div>`:''}
+      </div>
+      <div style="font-size:22px;font-weight:900;color:${p.score>0?'var(--green)':p.score<0?'var(--red)':'var(--text3)'}">${p.score>0?'+':''}$${p.score}</div>
+    </div>`).join('')}
+    <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:13px;color:var(--text3)">
+      <span>合計</span><span style="color:${total===0?'var(--green)':'var(--red)'}">$${total}</span>
+    </div>
+    <button class="confirm-btn" onclick="closeMaidanModal()" style="background:var(--tab-active)">繼續遊戲</button>
+  `;
+}
+
+// ── 詐胡 modal ────────────────────────────────────────────────────────────────
+function openZhaHuModal(preselect) {
+  S.zhaHuPayer = (preselect !== undefined) ? preselect : null;
+  document.getElementById('zhaHuModal').classList.add('open');
+  renderZhaHuModal();
+}
+function closeZhaHuModal() { document.getElementById('zhaHuModal').classList.remove('open'); }
+
+function renderZhaHuModal() {
+  const g = S.game;
+  const n = g.dealerStreak;
+  const bonus = 2*n+1;
+  const payerIdx = S.zhaHuPayer;
+  const unit = g.unitHu || g.unit || 1;
+  const ZHA_FAN = 30;
+
+  // Build preview if payer selected
+  let previewHtml = '';
+  if (payerIdx !== null && payerIdx !== undefined) {
+    const chains = g.chains || {};
+    const currentWinners = g.currentWinners || [];
+    const dealer = g.dealer;
+    let previewLines = [];
+    let total = 0;
+    for (let wIdx = 0; wIdx < 4; wIdx++) {
+      if (wIdx === payerIdx) continue;
+      const pairKey = `${wIdx}-${payerIdx}`;
+      const reverseKey = `${payerIdx}-${wIdx}`;
+      const winnerIsDealer = wIdx === dealer;
+      const loserIsDealer = payerIdx === dealer;
+      const dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
+      let basePay = ZHA_FAN + dealerBonusPay;
+      const prevCumulative = chains[pairKey] || 0;
+      const reverseCumulative = chains[reverseKey] || 0;
+      let thisPay = basePay;
+      const wn = g.players[wIdx].name;
+      const ln = g.players[payerIdx].name;
+      const dealerPart = dealerBonusPay > 0 ? ` + ${dealerBonusPay}番連莊` : '';
+      if (reverseCumulative > 0 && currentWinners.includes(payerIdx)) {
+        const clawback = Math.floor(reverseCumulative * 0.5);
+        thisPay = basePay + clawback;
+        previewLines.push(`<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${reverseCumulative}×0.5)=${clawback}剪 + ${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
+      } else if (prevCumulative > 0 && currentWinners.includes(wIdx)) {
+        const pullBonus = Math.floor(prevCumulative * 0.5);
+        thisPay = basePay + pullBonus;
+        previewLines.push(`<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${prevCumulative}×0.5)=${pullBonus}拉 + ${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
+      } else {
+        previewLines.push(`<div class="preview-row"><span>${wn}←${ln}</span><span>${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
+      }
+      total += thisPay;
+    }
+    previewHtml = `<div class="preview-bar">
+      ${previewLines.join('')}
+      <div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">
+        <div class="preview-row preview-total"><span>${g.players[payerIdx].emoji} ${g.players[payerIdx].name} 總付</span><span style="color:var(--red)">-$${total*unit}</span></div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('zhaHuSheetContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="modal-title" style="color:var(--red)">詐胡</div>
+      <button onclick="closeZhaHuModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
+    </div>
+    <div class="modal-sub">30番 + 連莊${bonus}番 · 按出銃$${unit}/番</div>
+    <div class="modal-section">詐胡者</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      ${g.players.map((p,i)=>`<button class="type-btn ${payerIdx===i?'sel':''}" onclick="setZhaHuPayer(${i})">
+        ${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}
+      </button>`).join('')}
+    </div>
+    ${previewHtml || `<div class="preview-bar" style="color:var(--text3);font-size:13px">選擇詐胡者後顯示計算</div>`}
+    <button class="confirm-btn" style="background:var(--red)" ${payerIdx===null||payerIdx===undefined?'disabled':''} onclick="confirmZhaHu()">確認詐胡</button>
+  `;
+}
+
+function setZhaHuPayer(i) { S.zhaHuPayer = i; renderZhaHuModal(); }
+
+function confirmZhaHu() {
+  const payerIdx = S.zhaHuPayer;
+  if (payerIdx === null || payerIdx === undefined) return;
+  saveWithUndo(applyZhaHu(S.game, payerIdx));
+  closeZhaHuModal();
+  renderTab();
+}
+
+// ── 獎罰 modal ────────────────────────────────────────────────────────────────
+function openPenaltyModal(preselect) {
+  S.penaltyInput = { payer: (preselect !== undefined) ? preselect : null, receiver:'all', di:1, dir:'pay' };
+  document.getElementById('penaltyModal').classList.add('open');
+  renderPenaltyModal();
+}
+function closePenaltyModal() { document.getElementById('penaltyModal').classList.remove('open'); }
+
+function renderPenaltyModal() {
+  const g = S.game;
+  const pi = S.penaltyInput;
+  const fan = pi.di * 5;
+  const unit = g.unitHu || g.unit || 1;
+  const isPay = pi.dir === 'pay';
+  const canConfirm = pi.receiver !== null;
+
+  // Preview
+  let previewHtml = '';
+  if (canConfirm) {
+    const others = pi.receiver === 'all' ? [0,1,2,3].filter(i=>i!==pi.payer) : [pi.receiver];
+    const subjectTotal = others.length * fan * unit;
+    const subjectName = g.players[pi.payer].name;
+    previewHtml = `<div class="preview-bar">
+      <div class="preview-row"><span>${subjectName} ${isPay?'付':'收'}</span><span>${fan}番 × ${others.length}人 = ${others.length*fan}番</span></div>
+      <div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">
+        <div class="preview-row preview-total"><span>${g.players[pi.payer].emoji} ${subjectName}</span><span style="color:${isPay?'var(--red)':'var(--green)'}">${isPay?'-':'+'}$${subjectTotal}</span></div>
+        ${others.map(o=>`<div class="preview-row preview-total"><span>${g.players[o].emoji} ${g.players[o].name}</span><span style="color:${isPay?'var(--green)':'var(--red)'}">${isPay?'+':'-'}$${fan*unit}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('penaltySheetContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="modal-title" style="color:var(--orange)">${g.players[pi.payer].emoji} ${esc(g.players[pi.payer].name)} 獎罰</div>
+      <button onclick="closePenaltyModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
+    </div>
+    <div class="modal-sub">按$${unit}/番</div>
+
+    <div class="modal-section">方向</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button class="type-btn ${isPay?'sel':''}" onclick="setPenaltyDir('pay')">付</button>
+      <button class="type-btn ${!isPay?'sel':''}" onclick="setPenaltyDir('collect')">收</button>
+    </div>
+
+    <div class="modal-section">底數</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button class="type-btn ${pi.di===1?'sel':''}" onclick="setPenaltyDi(1)">1底 (5番)</button>
+      <button class="type-btn ${pi.di===2?'sel':''}" onclick="setPenaltyDi(2)">2底 (10番)</button>
+    </div>
+
+    <div class="modal-section">${isPay?'收款者':'付款者'}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button class="type-btn ${pi.receiver==='all'?'sel':''}" onclick="setPenaltyReceiver('all')">所有人</button>
+      ${g.players.map((p,i)=>pi.payer===i?'':
+        `<button class="type-btn ${pi.receiver===i?'sel':''}" onclick="setPenaltyReceiver(${i})">${p.emoji} ${esc(p.name)}</button>`
+      ).join('')}
+    </div>
+
+    ${previewHtml || `<div class="preview-bar" style="color:var(--text3);font-size:13px">選擇後顯示計算</div>`}
+    <button class="confirm-btn" ${!canConfirm?'disabled':''} onclick="confirmPenalty()" style="background:var(--orange)">確認獎罰</button>
+  `;
+}
+
+function setPenaltyPayer(i) { S.penaltyInput.payer=i; if(S.penaltyInput.receiver===i) S.penaltyInput.receiver='all'; renderPenaltyModal(); }
+function setPenaltyDi(d) { S.penaltyInput.di=d; renderPenaltyModal(); }
+function setPenaltyReceiver(r) { S.penaltyInput.receiver=r; renderPenaltyModal(); }
+function setPenaltyDir(d) { S.penaltyInput.dir=d; renderPenaltyModal(); }
+
+function confirmPenalty() {
+  const pi = S.penaltyInput;
+  if (pi.payer === null) return;
+  saveWithUndo(applyPenalty(S.game, pi.payer, pi.receiver, pi.di, pi.dir));
+  closePenaltyModal();
+  renderTab();
+}
+
+// ── Swap player ───────────────────────────────────────────────────────────────
+function openSwapModal() {
+  S.swapInput = { seatIdx: null, newPlayer: null };
+  document.getElementById('swapModal').classList.add('open');
+  renderSwapModal();
+}
+function closeSwapModal() { document.getElementById('swapModal').classList.remove('open'); }
+
+function renderSwapModal() {
+  const g = S.game;
+  const sw = S.swapInput;
+  const currentNames = g.players.map(p=>p.name);
+  // All profiles + bench players (previously swapped out) not currently seated
+  const bench = (g.bench||[]);
+  const available = [
+    ...S.profiles.filter(p=>!currentNames.includes(p.name)),
+    ...bench.filter(p=>!currentNames.includes(p.name) && !S.profiles.find(pr=>pr.name===p.name))
+  ];
+
+  document.getElementById('swapSheetContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="modal-title">⇄ 換人</div>
+      <button onclick="closeSwapModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
+    </div>
+    <div class="modal-sub">換出玩家的鏈條將中斷，新玩家從 $0 開始</div>
+
+    <div class="modal-section">換出哪位</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      ${g.players.map((p,i)=>`<button class="type-btn ${sw.seatIdx===i?'sel':''}" onclick="setSwapSeat(${i})">
+        ${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}
+        <div style="font-size:10px;color:${p.score>=0?'var(--green)':'var(--red)'};font-weight:700">${p.score>=0?'+':''}$${p.score}</div>
+      </button>`).join('')}
+    </div>
+
+    <div class="modal-section">換入哪位</div>
+    ${available.length===0?`<div style="color:var(--text3);font-size:13px;padding:8px 0">所有牌友均在座</div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      ${available.map(p=>`<button class="type-btn ${sw.newPlayer===p.name?'sel':''}" onclick="setSwapNew('${esc(p.name)}')">
+        ${p.emoji} ${esc(p.name)}
+        ${bench.find(b=>b.name===p.name)?`<div style="font-size:10px;color:${bench.find(b=>b.name===p.name).score>=0?'var(--green)':'var(--red)'};font-weight:700">${bench.find(b=>b.name===p.name).score>=0?'+':''}$${bench.find(b=>b.name===p.name).score}</div>`:''}
+      </button>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="swapTempName" class="unit-input" type="text" placeholder="或輸入新牌友名字" style="flex:1;margin:0">
+      <button onclick="setSwapNewTemp()" style="background:var(--tab-active);color:#fff;border:none;border-radius:var(--radius-sm);padding:0 12px;font-size:13px;font-family:'Noto Sans TC',sans-serif;cursor:pointer">選擇</button>
+    </div>
+
+    <button class="confirm-btn" ${sw.seatIdx===null||!sw.newPlayer?'disabled':''} onclick="confirmSwap()">確認換人</button>
+  `;
+}
+
+function setSwapSeat(i) { S.swapInput.seatIdx=i; renderSwapModal(); }
+function setSwapNew(name) { S.swapInput.newPlayer=name; renderSwapModal(); }
+function setSwapNewTemp() {
+  const n = document.getElementById('swapTempName')?.value?.trim();
+  if (!n) return;
+  S.swapInput.newPlayer = n;
+  renderSwapModal();
+}
+
+function confirmSwap() {
+  const sw = S.swapInput;
+  if (sw.seatIdx === null || !sw.newPlayer) return;
+  const g = S.game;
+  const outPlayer = { ...g.players[sw.seatIdx] };
+  const bench = [...(g.bench||[])];
+
+  // Add outgoing player to bench (or update if already there)
+  const existingBench = bench.findIndex(p=>p.name===outPlayer.name);
+  if (existingBench >= 0) bench[existingBench] = outPlayer;
+  else bench.push(outPlayer);
+
+  // Find incoming player — from bench, profiles, or new
+  const fromBench = bench.find(p=>p.name===sw.newPlayer);
+  const fromProfile = S.profiles.find(p=>p.name===sw.newPlayer);
+  const emoji = fromBench?.emoji || fromProfile?.emoji || '👤';
+  const inPlayer = fromBench
+    ? { ...fromBench } // brings back their score
+    : { name:sw.newPlayer, emoji, score:0, wins:0, losses:0, huWins:0, zimoWins:0, shots:0 };
+
+  // Remove incoming player from bench if they were there
+  const newBench = bench.filter(p=>p.name!==sw.newPlayer);
+
+  // Clear all chains involving the swapped seat
+  const newChains = {};
+  Object.entries(g.chains||{}).forEach(([key, val]) => {
+    const [w,l] = key.split('-').map(Number);
+    if (w !== sw.seatIdx && l !== sw.seatIdx) newChains[key] = val;
+  });
+
+  // Clear currentWinners if outgoing player was a winner
+  const newCurrentWinners = (g.currentWinners||[]).filter(i=>i!==sw.seatIdx);
+
+  const newPlayers = [...g.players];
+  newPlayers[sw.seatIdx] = inPlayer;
+
+  const desc = `${outPlayer.name} → ${sw.newPlayer} (座位${sw.seatIdx+1})`;
+  const log = { type:'換人', desc, payments:[0,0,0,0], unit:g.unitHu||1, round:g.round, events:[], dealer:g.dealer, dealerStreak:g.dealerStreak };
+
+  const newGame = { ...g, players:newPlayers, bench:newBench, chains:newChains, currentWinners:newCurrentWinners, log:[log,...g.log] };
+  saveWithUndo(newGame);
+  closeSwapModal();
+  renderTab();
+}
+
 // ── Edit profile modal ────────────────────────────────────────────────────────
 function openEditProfile(idx) {
   S.editingProfile = idx;
   S.editEmoji = idx===null ? EMOJIS[Math.floor(Math.random()*EMOJIS.length)] : S.profiles[idx].emoji;
   S.view = 'editProfile';
   render();
+}
+
+// ── Undo ──────────────────────────────────────────────────────────────────────
+const UNDO_KEY = 'mj_undo_v1';
+function saveUndo(game) { try { localStorage.setItem(UNDO_KEY, JSON.stringify(game)); } catch {} }
+function loadUndo() { try { return JSON.parse(localStorage.getItem(UNDO_KEY)); } catch { return null; } }
+function clearUndo() { localStorage.removeItem(UNDO_KEY); }
+
+function undoLast() {
+  const prev = loadUndo();
+  if (!prev) { alert('沒有可撤銷的操作'); return; }
+  if (!confirm('撤銷上一步？')) return;
+  S.game = prev;
+  clearUndo();
+  saveGame(S.game);
+  renderTab();
+}
+
+function saveWithUndo(newGame) {
+  saveUndo(S.game); // save current before overwriting
+  S.game = newGame;
+  saveGame(S.game);
 }
 
 // ── Actions ──────────────────────────────────────────────────────────────────
@@ -882,15 +1366,13 @@ function confirmWin() {
   const isZimo = w.type==='zimo';
   const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
   if(!allFansSet || w.winners.length===0 || (!isZimo && w.discard===null)) return;
-  S.game=applyHand(S.game,{type:w.type,winners:w.winners,discardIdx:w.discard,fans:w.fans});
-  saveGame(S.game);
+  saveWithUndo(applyHand(S.game,{type:w.type,winners:w.winners,discardIdx:w.discard,fans:w.fans}));
   closeWinModal();
   renderTab();
 }
 
 function recordLiuju() {
-  S.game=applyHand(S.game,{type:'liuju'});
-  saveGame(S.game);
+  saveWithUndo(applyHand(S.game,{type:'liuju'}));
   renderTab();
 }
 
@@ -900,7 +1382,8 @@ function resumeGame() { S.view='game'; S.tab='game'; render(); }
 function endGame() {
   if(!confirm('確定結束本局？')) return;
   const g=S.game;
-  g.players.forEach(p=>{
+  const allPlayers = [...g.players, ...(g.bench||[])];
+  allPlayers.forEach(p=>{
     const idx=S.profiles.findIndex(pr=>pr.name===p.name);
     if(idx>=0){
       S.profiles[idx].totalScore=(S.profiles[idx].totalScore||0)+p.score;
@@ -927,7 +1410,7 @@ function startGame() {
       const p=S.profiles.find(pr=>pr.name===name);
       return {name,emoji:p?p.emoji:'👤',score:0,wins:0,losses:0,huWins:0,zimoWins:0,shots:0};
     }),
-    dealer:0,dealerStreak:0,round:1,windRound:0,unitHu,unitZimo,chains:{},currentWinners:[],log:[]
+    dealer:0,dealerStreak:0,round:1,windRound:0,unitHu,unitZimo,chains:{},currentWinners:[],bench:[],log:[]
   };
   saveGame(S.game);
   S.setupSeats=[null,null,null,null];
