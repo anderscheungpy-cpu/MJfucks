@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="麻雀記分">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#6b5c3e">
 <title>麻雀記分</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -244,6 +250,31 @@ const WINDS = ['東','南','西','北'];
 const EMOJIS = ['🐭','🐮','🐯','🐰','🐲','🐍','🐴','🐏','🐵','🐔','🐶','🐷','😺','🦊','🐻','🐼','🐨','🦁'];
 const PROFILES_KEY = 'mj_profiles_v2';
 const GAME_KEY = 'mj_game_v5';
+const DAILY_KEY = 'mj_daily_v1';
+
+// ── Supabase config ───────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://wzqsbsakzhomvhilndxd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6cXNic2FremhvbXZoaWxuZHhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MDk0ODUsImV4cCI6MjA4MzI4NTQ4NX0.tPw5p9feBiCL9nHKfO6cSR07oDhReZb19TcvkgTXmnU';
+const KNOWN_PLAYERS = ['Anders','Philip','Anfern','Rosie','Gina','Kaylee'];
+
+// ── Daily accumulator ─────────────────────────────────────────────────────────
+function loadDaily() { try { return JSON.parse(localStorage.getItem(DAILY_KEY)) || { date: today(), totals:{} }; } catch { return { date: today(), totals:{} }; } }
+function saveDaily(d) { localStorage.setItem(DAILY_KEY, JSON.stringify(d)); }
+function clearDaily() { localStorage.removeItem(DAILY_KEY); }
+function today() { return new Date().toISOString().slice(0,10); }
+
+function accumulateDaily(allPlayers) {
+  let daily = loadDaily();
+  // Reset if date changed
+  if (daily.date !== today()) daily = { date: today(), totals:{} };
+  allPlayers.forEach(p => {
+    if (p.score !== 0) {
+      daily.totals[p.name] = (daily.totals[p.name] || 0) + p.score;
+    }
+  });
+  saveDaily(daily);
+  return daily;
+}
 
 function loadProfiles() { try { return JSON.parse(localStorage.getItem(PROFILES_KEY)) || []; } catch { return []; } }
 function saveProfiles(p) { localStorage.setItem(PROFILES_KEY, JSON.stringify(p)); }
@@ -517,6 +548,7 @@ function render() {
   } else if (S.view === 'profiles') {
     tb.style.display='none';
     mc.innerHTML = renderProfiles();
+    syncProfilesFromLovable();
   } else if (S.view === 'editProfile') {
     tb.style.display='none';
     mc.innerHTML = renderEditProfilePage();
@@ -548,6 +580,7 @@ function renderHome() {
       </div>
       <button class="home-btn secondary" onclick="goSetup()">新遊戲</button>
       <button class="home-btn secondary" onclick="S.view='profiles';render()" style="margin-top:8px">牌友管理</button>
+      ${(()=>{const d=loadDaily();return Object.keys(d.totals).length>0?`<button class="home-btn" style="margin-top:8px;background:#2d7a4f;color:#fff;border:none" onclick="openPushModal()">推送至 Lovable</button>`:''})()}
     </div>`;
   }
   return `<div class="home-page">
@@ -556,6 +589,7 @@ function renderHome() {
     <div class="home-sub">港式台灣牌<br>拉 · 剪 · 連莊</div>
     <button class="home-btn primary" style="width:100%" onclick="goSetup()">新遊戲</button>
     <button class="home-btn secondary" style="width:100%;margin-top:8px" onclick="S.view='profiles';render()">牌友管理</button>
+    ${(()=>{const d=loadDaily();return Object.keys(d.totals).length>0?`<button class="home-btn" style="width:100%;margin-top:8px;background:#2d7a4f;color:#fff;border:none" onclick="openPushModal()">推送至 Lovable</button>`:''})()}
   </div>`;
 }
 
@@ -611,23 +645,52 @@ function renderPickPlayer() {
 
 function renderProfiles() {
   const p = S.profiles;
+  const syncStatus = S.profileSyncStatus || 'idle';
   return `<div class="profiles-page" style="overflow-y:auto;height:100%">
     <button class="back-btn" onclick="S.view='home';render()">← 返回</button>
     <div class="page-header">
       <div class="page-title">牌友管理</div>
       <button class="add-btn" onclick="openEditProfile(null)">＋ 新增</button>
     </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">
+      ${syncStatus==='loading'?'⏳ 正在從 Lovable 同步...':syncStatus==='done'?'✅ 已從 Lovable 同步':syncStatus==='error'?'❌ 同步失敗，顯示本地數據':''}
+    </div>
     ${p.length===0?'<div class="empty-state">尚未新增牌友</div>':''}
-    ${p.map((pr,i)=>`<div class="profile-item">
-      <span style="font-size:26px">${pr.emoji}</span>
-      <div class="profile-info">
-        <div class="profile-name">${esc(pr.name)}</div>
-        <div class="profile-stats">${pr.totalWins||0}勝 ${pr.totalLosses||0}負 · <span style="color:${(pr.totalScore||0)>=0?'var(--green)':'var(--red)'}">${(pr.totalScore||0)>=0?'+':''}$${pr.totalScore||0}</span></div>
-      </div>
-      <button class="icon-btn" onclick="openEditProfile(${i})" style="margin-right:4px">編輯</button>
-      <button class="icon-btn del" onclick="deleteProfile(${i})">刪除</button>
-    </div>`).join('')}
+    ${p.map((pr,i)=>{
+      const score = pr.lovableScore !== undefined ? pr.lovableScore : (pr.totalScore||0);
+      return `<div class="profile-item">
+        <span style="font-size:26px">${pr.emoji}</span>
+        <div class="profile-info">
+          <div class="profile-name">${esc(pr.name)}</div>
+          <div class="profile-stats"><span style="color:${score>=0?'var(--green)':'var(--red)'}">${score>=0?'+':''}$${score}</span></div>
+        </div>
+        <button class="icon-btn" onclick="openEditProfile(${i})" style="margin-right:4px">編輯</button>
+        <button class="icon-btn del" onclick="deleteProfile(${i})">刪除</button>
+      </div>`;
+    }).join('')}
   </div>`;
+}
+
+async function syncProfilesFromLovable() {
+  S.profileSyncStatus = 'loading';
+  if (S.view === 'profiles') document.getElementById('main-content').innerHTML = renderProfiles();
+  try {
+    const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
+    const [playersRes, resultsRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/players?select=id,name`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/player_results?select=player_id,amount`, { headers }),
+    ]);
+    if (!playersRes.ok || !resultsRes.ok) throw new Error('fetch failed');
+    const players = await playersRes.json();
+    const results = await resultsRes.json();
+    const totals = {};
+    results.forEach(r => { totals[r.player_id] = (totals[r.player_id]||0) + r.amount; });
+    const nameToTotal = {};
+    players.forEach(p => { if (totals[p.id] !== undefined) nameToTotal[p.name] = totals[p.id]; });
+    S.profiles = S.profiles.map(p => ({...p, lovableScore: nameToTotal[p.name] !== undefined ? nameToTotal[p.name] : p.lovableScore}));
+    S.profileSyncStatus = 'done';
+  } catch(e) { S.profileSyncStatus = 'error'; }
+  if (S.view === 'profiles') document.getElementById('main-content').innerHTML = renderProfiles();
 }
 
 function renderEditProfilePage() {
@@ -1392,10 +1455,12 @@ function endGame() {
     }
   });
   saveProfiles(S.profiles);
+  const daily = accumulateDaily(allPlayers);
   clearGame();
   S.game=null;
   S.view='home';
   render();
+  showToast(`本局完成 ✓ 今日已累計 ${Object.keys(daily.totals).length} 位玩家`);
 }
 
 function startGame() {
@@ -1451,7 +1516,132 @@ function saveProfile() {
 
 // Init
 if(S.game) { S.view='game'; }
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#2c2825;color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;z-index:999;pointer-events:none;font-family:'Noto Sans TC',sans-serif;white-space:nowrap";
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+// ── Push to Lovable ───────────────────────────────────────────────────────────
+function openPushModal() {
+  S.pushEdits = null; // reset edits on open
+  document.getElementById('pushModal').classList.add('open');
+  renderPushModal('idle');
+}
+function closePushModal() { document.getElementById('pushModal').classList.remove('open'); }
+
+function renderPushModal(state, message) {
+  const daily = loadDaily();
+  if (!S.pushEdits) {
+    S.pushEdits = { date: daily.date, amounts: {...daily.totals} };
+  }
+  const edits = S.pushEdits;
+  const known = Object.entries(edits.amounts).filter(([n])=>KNOWN_PLAYERS.includes(n));
+  const skipped = Object.entries(daily.totals).filter(([n])=>!KNOWN_PLAYERS.includes(n));
+  const sum = Object.values(edits.amounts).reduce((a,b)=>a+b,0);
+  const sumOk = sum === 0;
+
+  document.getElementById('pushSheetContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="modal-title" style="color:#2d7a4f">📤 推送至 Lovable</div>
+      <button onclick="closePushModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
+    </div>
+
+    <div class="modal-section">日期</div>
+    <input type="date" value="${edits.date}" onchange="S.pushEdits.date=this.value"
+      style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:15px;font-family:'Noto Sans TC',sans-serif;color:var(--text);margin-bottom:12px">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="modal-section" style="margin:0">金額</div>
+      <div style="font-size:13px;font-weight:700;color:${sumOk?'var(--green)':'var(--red)'}">合計: $${sum} ${sumOk?'✓':'(須為0)'}</div>
+    </div>
+    ${known.map(([n,amt])=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--bg2)">
+      <span style="font-size:18px">${S.profiles.find(p=>p.name===n)?.emoji||'👤'}</span>
+      <span style="flex:1;font-size:14px;font-weight:600">${esc(n)}</span>
+      <input type="number" value="${amt}"
+        onchange="S.pushEdits.amounts['${n}']=parseInt(this.value)||0;renderPushModal('idle')"
+        style="width:90px;padding:6px 8px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);
+        background:var(--bg);font-size:15px;font-weight:700;text-align:right;
+        color:${amt>=0?'var(--green)':'var(--red)'};font-family:'Noto Sans TC',sans-serif">
+    </div>`).join('')}
+    ${skipped.length>0?`<div style="font-size:11px;color:var(--text3);margin-top:8px">略過（非標準牌友）：${skipped.map(([n])=>n).join('、')}</div>`:''}
+
+    ${state==='loading'?`<div style="text-align:center;padding:16px;color:var(--text2);font-size:14px">⏳ 推送中...</div>`:''}
+    ${state==='success'?`<div style="background:#f0fdf4;border-radius:var(--radius-sm);padding:12px;margin-top:8px;color:#2d7a4f;font-size:14px;font-weight:500">✅ 推送成功！</div>`:''}
+    ${state==='error'?`<div style="background:#fef2f2;border-radius:var(--radius-sm);padding:12px;margin-top:8px;color:var(--red);font-size:13px">❌ ${esc(message||'未知錯誤')}</div>`:''}
+
+    ${state==='success'
+      ?`<button class="confirm-btn" style="background:#2d7a4f;margin-top:12px" onclick="clearDaily();S.pushEdits=null;closePushModal();render()">完成並清除今日記錄</button>`
+      :`<button class="confirm-btn" style="background:#2d7a4f;margin-top:12px" ${!sumOk||state==='loading'||known.length===0?'disabled':''} onclick="pushToLovable()">
+        ${sumOk?'確認推送':'合計須為 $0'}
+      </button>`
+    }
+  `;
+}
+
+
+async function pushToLovable() {
+  renderPushModal('loading');
+  const edits = S.pushEdits;
+  const headers = {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Prefer': 'return=representation',
+  };
+  try {
+    const playersRes = await fetch(`${SUPABASE_URL}/rest/v1/players?select=id,name`, { headers });
+    if (!playersRes.ok) throw new Error(`players 表格讀取失敗 (${playersRes.status})`);
+    const players = await playersRes.json();
+    const nameToId = {};
+    players.forEach(p => nameToId[p.name] = p.id);
+
+    const sessionRes = await fetch(`${SUPABASE_URL}/rest/v1/game_sessions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ game_date: edits.date }),
+    });
+    if (!sessionRes.ok) throw new Error(`game_sessions 寫入失敗 (${sessionRes.status})`);
+    const sessions = await sessionRes.json();
+    const sessionId = sessions[0]?.id;
+    if (!sessionId) throw new Error('無法取得 session id');
+
+    const results = Object.entries(edits.amounts)
+      .filter(([name]) => KNOWN_PLAYERS.includes(name) && nameToId[name])
+      .map(([name, amount]) => ({ session_id: sessionId, player_id: nameToId[name], amount }));
+
+    if (results.length === 0) throw new Error('沒有符合的牌友資料');
+
+    const resultsRes = await fetch(`${SUPABASE_URL}/rest/v1/player_results`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(results),
+    });
+    if (!resultsRes.ok) throw new Error(`player_results 寫入失敗 (${resultsRes.status})`);
+
+    renderPushModal('success');
+  } catch(err) {
+    renderPushModal('error', err.message);
+  }
+}
+
 render();
+  // Register service worker for PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
 </script>
+<!-- Push to Lovable modal -->
+<div class="modal-overlay" id="pushModal">
+  <div class="modal-sheet">
+    <div id="pushSheetContent"></div>
+  </div>
+</div>
+
 </body>
 </html>
