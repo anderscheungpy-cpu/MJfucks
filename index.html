@@ -1071,8 +1071,8 @@ let _repeatInterval = null;
 function startRepeat(wi, delta) {
   adjustFan(wi, delta);
   _repeatTimer = setTimeout(() => {
-    _repeatInterval = setInterval(() => adjustFan(wi, delta), 80);
-  }, 400);
+    _repeatInterval = setInterval(() => adjustFan(wi, delta), 200);
+  }, 600);
 }
 
 function stopRepeat() {
