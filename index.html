@@ -226,6 +226,13 @@
   </div>
 </div>
 
+<!-- Live session modal -->
+<div class="modal-overlay" id="liveModal">
+  <div class="modal-sheet">
+    <div id="liveContent"></div>
+  </div>
+</div>
+
 <!-- Surrender modal -->
 <div class="modal-overlay" id="surrenderModal">
   <div class="modal-sheet">
@@ -266,7 +273,11 @@ const SUPABASE_URL = 'https://wzqsbsakzhomvhilndxd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6cXNic2FremhvbXZoaWxuZHhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MDk0ODUsImV4cCI6MjA4MzI4NTQ4NX0.tPw5p9feBiCL9nHKfO6cSR07oDhReZb19TcvkgTXmnU';
 const KNOWN_PLAYERS = ['Anders','Philip','Anfern','Rosie','Gina','Kaylee'];
 
-// ── Daily accumulator ─────────────────────────────────────────────────────────
+// ── Live Session (Supabase Realtime) ─────────────────────────────────────────
+const LIVE_URL = 'https://xhhkzibgkrkvvrhwgcqq.supabase.co';
+const LIVE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoaGt6aWJna3JrdnZyaHdnY3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2OTM0OTYsImV4cCI6MjA5MzI2OTQ5Nn0.KAvF10uK1s0HarhQsa2zig33L8BJ2avffFK1BLgyKc4';
+const LIVE_SESSION_KEY = 'mj_live_session';
+let _liveChannel = null;
 function loadDaily() { try { return JSON.parse(localStorage.getItem(DAILY_KEY)) || { date: today(), totals:{} }; } catch { return { date: today(), totals:{} }; } }
 function saveDaily(d) { localStorage.setItem(DAILY_KEY, JSON.stringify(d)); }
 function clearDaily() { localStorage.removeItem(DAILY_KEY); }
@@ -318,6 +329,7 @@ let S = {
   winInput: { type:'hu', winners:[], discard:null, fans:{} },
   penaltyInput: { payer:null, receiver:'all', di:1, dir:'pay' },
   swapInput: { seatIdx:null, newPlayer:null },
+  liveCode: localStorage.getItem(LIVE_SESSION_KEY) || null,
   editEmoji: '🐶',
 };
 
@@ -584,6 +596,9 @@ function render() {
     tb.style.display='flex';
     mc.innerHTML = renderGameShell();
     renderTab();
+  } else if (S.view === 'spectator') {
+    tb.style.display='none';
+    renderSpectatorView();
   }
 }
 
@@ -796,6 +811,7 @@ function renderGameTab() {
     </div>
     <div style="display:flex;justify-content:flex-end;align-items:center;padding:8px 0;flex-shrink:0">
       ${(()=>{ const s=loadUndoStack(); return s.length>0?`<button onclick="undoLast()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-right:auto">↩ 撤銷(${s.length})</button>`:''; })()}
+      <button onclick="openLiveModal()" style="background:none;border:none;font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;color:${S.liveCode?'var(--green)':'var(--text2)'}">📡${S.liveCode?' 直播中':''}</button>
       <button onclick="openMaidanModal()" style="background:none;border:none;font-size:13px;color:var(--tab-active);cursor:pointer;font-family:'Noto Sans TC',sans-serif">💰 埋單</button>
       <button onclick="openSwapModal()" style="background:none;border:none;font-size:13px;color:var(--orange);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⇄ 換人</button>
       <button onclick="S.view='home';render()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⚙</button>
@@ -1456,6 +1472,214 @@ function openEditProfile(idx) {
   render();
 }
 
+// ── Live Session ──────────────────────────────────────────────────────────────
+function openLiveModal() {
+  document.getElementById('liveModal').classList.add('open');
+  renderLiveModal('idle');
+}
+function closeLiveModal() { document.getElementById('liveModal').classList.remove('open'); }
+
+function renderLiveModal(state, msg) {
+  const code = S.liveCode;
+  const spectatorUrl = `${location.origin}${location.pathname}?watch=${code}`;
+
+  document.getElementById('liveContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="modal-title">📡 直播</div>
+      <button onclick="closeLiveModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">關閉</button>
+    </div>
+
+    ${code ? `
+      <div style="background:#f0fdf4;border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;text-align:center">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:6px">直播代碼 — 告訴朋友輸入此代碼</div>
+        <div style="font-size:48px;font-weight:900;letter-spacing:8px;color:#2d7a4f">${code}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px;word-break:break-all">${spectatorUrl}</div>
+      </div>
+      <div id="liveQR" style="display:flex;justify-content:center;margin-bottom:12px"></div>
+      <button class="confirm-btn" style="background:var(--red)" onclick="stopLive()">停止直播</button>
+    ` : `
+      <div class="modal-sub">開始直播後，朋友可以用代碼或掃描 QR 碼實時觀看比分</div>
+      ${state==='loading'?`<div style="text-align:center;padding:16px;color:var(--text2)">⏳ 建立直播中...</div>`:''}
+      ${state==='error'?`<div style="background:#fef2f2;border-radius:var(--radius-sm);padding:10px;color:var(--red);font-size:13px;margin-bottom:8px">❌ ${esc(msg||'錯誤')}</div>`:''}
+      <button class="confirm-btn" style="background:#2d7a4f" ${state==='loading'?'disabled':''} onclick="startLive()">開始直播</button>
+    `}
+  `;
+
+  // Generate QR code if we have a code
+  if (code) {
+    setTimeout(() => {
+      const el = document.getElementById('liveQR');
+      if (el) {
+        el.innerHTML = generateQR(spectatorUrl);
+      }
+    }, 50);
+  }
+}
+
+function generateQR(text) {
+  // Simple QR using a free API
+  const encoded = encodeURIComponent(text);
+  return `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encoded}" style="border-radius:8px;border:4px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.1)">`;
+}
+
+async function startLive() {
+  renderLiveModal('loading');
+  try {
+    // Generate a 4-digit code
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+    const headers = {
+      'Content-Type': 'application/json',
+      'apikey': LIVE_KEY,
+      'Authorization': `Bearer ${LIVE_KEY}`,
+      'Prefer': 'return=representation',
+    };
+    // Create session row
+    const res = await fetch(`${LIVE_URL}/rest/v1/live_sessions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        session_code: code,
+        game_state: JSON.stringify(S.game),
+        updated_at: new Date().toISOString(),
+      }),
+    });
+    if (!res.ok) throw new Error(`建立失敗 (${res.status})`);
+    S.liveCode = code;
+    localStorage.setItem(LIVE_SESSION_KEY, code);
+    renderLiveModal('idle');
+    renderTab(); // update 直播中 indicator
+  } catch(e) {
+    renderLiveModal('error', e.message);
+  }
+}
+
+async function stopLive() {
+  if (!S.liveCode) return;
+  const headers = {
+    'apikey': LIVE_KEY,
+    'Authorization': `Bearer ${LIVE_KEY}`,
+  };
+  // Delete session
+  await fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${S.liveCode}`, {
+    method: 'DELETE', headers,
+  }).catch(()=>{});
+  S.liveCode = null;
+  localStorage.removeItem(LIVE_SESSION_KEY);
+  closeLiveModal();
+  renderTab();
+}
+
+async function pushLiveState() {
+  if (!S.liveCode || !S.game) return;
+  const headers = {
+    'Content-Type': 'application/json',
+    'apikey': LIVE_KEY,
+    'Authorization': `Bearer ${LIVE_KEY}`,
+  };
+  fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${S.liveCode}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({
+      game_state: JSON.stringify(S.game),
+      updated_at: new Date().toISOString(),
+    }),
+  }).catch(()=>{});
+}
+
+// ── Spectator mode ────────────────────────────────────────────────────────────
+function checkSpectatorMode() {
+  const params = new URLSearchParams(location.search);
+  const code = params.get('watch');
+  if (!code) return;
+  // Enter spectator mode
+  S.spectatorCode = code;
+  S.spectatorGame = null;
+  S.view = 'spectator';
+  render();
+  subscribeSpectator(code);
+}
+
+async function subscribeSpectator(code) {
+  // Poll every 3 seconds (simple approach, works without websocket config)
+  await fetchSpectatorState(code);
+  S.spectatorPoll = setInterval(() => fetchSpectatorState(code), 3000);
+}
+
+async function fetchSpectatorState(code) {
+  try {
+    const headers = { 'apikey': LIVE_KEY, 'Authorization': `Bearer ${LIVE_KEY}` };
+    const res = await fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${code}&select=game_state,updated_at`, { headers });
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (!rows.length) {
+      document.getElementById('spectator-status').textContent = '找不到直播 ' + code;
+      return;
+    }
+    const gameState = JSON.parse(rows[0].game_state);
+    S.spectatorGame = gameState;
+    renderSpectatorView();
+  } catch(e) {}
+}
+
+function renderSpectatorView() {
+  const g = S.spectatorGame;
+  if (!g) {
+    document.getElementById('main-content').innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px">
+        <div style="font-size:32px">📡</div>
+        <div style="font-size:16px;font-weight:700">正在連接直播...</div>
+        <div id="spectator-status" style="font-size:13px;color:var(--text2)">代碼: ${S.spectatorCode}</div>
+      </div>`;
+    return;
+  }
+
+  const round_wind = (g.windRound||0) % 4;
+  const windCircle = WINDS[round_wind]+'圈';
+  const windLabel = windCircle+WINDS[g.dealer]+'風';
+
+  const card = (idx) => {
+    const p = g.players[idx];
+    const isDealer = idx===g.dealer;
+    const sc = p.score;
+    const relWind = WINDS[(idx - g.dealer + 4) % 4];
+    return `<div class="player-card ${isDealer?'is-dealer':''}" style="cursor:default">
+      ${isDealer?`<div class="dealer-badge">莊</div>`:''}
+      <div class="player-emoji">${p.emoji}</div>
+      <div class="player-name">${esc(p.name)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:3px">${windCircle}${relWind}位</div>
+      <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
+      ${isDealer&&g.dealerStreak>0?`<div style="font-size:10px;color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</div>`:''}
+    </div>`;
+  };
+
+  // Latest hand
+  const latest = g.log && g.log[0];
+  const latestDesc = latest ? `<div style="font-size:13px;color:var(--text2);text-align:center;padding:8px 0">${esc(latest.desc||latest.type)}</div>` : '';
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="game-page">
+      <div class="round-info">
+        <div class="round-badge">
+          <span>👁 觀看</span><span class="arrow">›</span>
+          <span>${windLabel}</span><span class="arrow">›</span>
+          <span style="color:var(--text2)">第${g.round}局</span>
+          <span style="font-size:11px;color:var(--green)">● 直播</span>
+        </div>
+      </div>
+      <div class="cross-outer">
+        <div class="cross-card-wrap" style="grid-column:2;grid-row:1">${card(2)}</div>
+        <div class="cross-card-wrap-side" style="grid-column:1;grid-row:2">${card(3)}</div>
+        <div class="cross-center-col" style="grid-column:2;grid-row:2;align-self:center">
+          <div class="center-wind">${windLabel}</div>
+        </div>
+        <div class="cross-card-wrap-side" style="grid-column:3;grid-row:2">${card(1)}</div>
+        <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
+      </div>
+      ${latestDesc}
+      <div style="text-align:center;font-size:11px;color:var(--text3);padding-bottom:8px">每3秒更新 · 代碼 ${S.spectatorCode}</div>
+    </div>`;
+}
+
 // ── Surrender (投降) ──────────────────────────────────────────────────────────
 function checkSurrenderPrompt() {
   const g = S.game;
@@ -1577,12 +1801,13 @@ function undoLast() {
 
 function saveWithUndo(newGame) {
   const stack = loadUndoStack();
-  stack.push(S.game); // push current state onto stack
-  // Keep max 30 undo steps to avoid localStorage overflow
+  stack.push(S.game);
   if (stack.length > 30) stack.shift();
   saveUndoStack(stack);
   S.game = newGame;
   saveGame(S.game);
+  // Push to live session if active
+  pushLiveState();
 }
 
 // ── Actions ──────────────────────────────────────────────────────────────────
@@ -1836,6 +2061,7 @@ async function pushToLovable() {
 }
 
 render();
+checkSpectatorMode();
   // Register service worker for PWA
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
