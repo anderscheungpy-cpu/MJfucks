@@ -49,25 +49,27 @@
   .page.active { display: block; }
 
   /* ── Game page ── */
-  .game-page { background: var(--bg); padding: 12px 12px 0; }
-  .round-info { text-align: center; margin-bottom: 8px; }
+  .game-page { background: var(--bg); padding: 8px 12px 0; display: flex; flex-direction: column; height: calc(100dvh - 80px); box-sizing: border-box; }
+  .round-info { text-align: center; margin-bottom: 8px; flex-shrink: 0; }
   .round-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--bg2); border-radius: 99px; padding: 4px 14px; font-size: 13px; color: var(--text2); font-weight: 500; }
   .round-badge .arrow { color: var(--orange); font-size: 12px; }
 
-  /* Cross layout — all 4 cards same size */
-  .cross-outer { display: grid; grid-template-columns: 80px 80px 80px; grid-template-rows: auto auto auto; gap: 6px; padding: 4px 0; justify-content: center; }
+  /* Cross layout — fills available screen height equally */
+  .cross-outer { display: grid; grid-template-columns: 1fr 130px 1fr; grid-template-rows: auto auto auto; gap: 10px; flex: 1; min-height: 0; padding: 4px 0; align-content: center; }
+  .cross-card-wrap { display: flex; justify-content: center; }
+  .cross-card-wrap-side { display: flex; justify-content: center; align-self: center; }
   .cross-row { contents: ''; }
   .cross-cell { min-width: 0; }
-  .cross-center-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .cross-center-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
   .cross-spacer { display: none; }
 
-  .player-card { background: var(--card); border-radius: var(--radius); padding: 8px 4px; text-align: center; cursor: pointer; transition: transform 0.1s; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .player-card { background: var(--card); border-radius: var(--radius); padding: 14px 10px; text-align: center; cursor: pointer; transition: transform 0.1s; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; width: 130px; }
   .player-card:active { transform: scale(0.97); }
   .player-card.is-dealer { box-shadow: 0 2px 12px rgba(212,115,42,0.18); }
-  .dealer-badge { position: absolute; top: 4px; left: 4px; background: var(--dealer-bg); color: var(--dealer-text); font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 4px; }
-  .player-emoji { font-size: 18px; margin-bottom: 2px; }
-  .player-name { font-size: 10px; color: var(--text2); margin-bottom: 3px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .player-score { font-size: 18px; font-weight: 900; line-height: 1; }
+  .dealer-badge { position: absolute; top: 6px; left: 6px; background: var(--dealer-bg); color: var(--dealer-text); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+  .player-emoji { font-size: 34px; margin-bottom: 5px; }
+  .player-name { font-size: 15px; color: var(--text2); margin-bottom: 3px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
+  .player-score { font-size: 28px; font-weight: 900; line-height: 1; }
   .player-score.pos { color: var(--green); }
   .player-score.neg { color: var(--red); }
   .player-score.zero { color: var(--text3); }
@@ -224,6 +226,13 @@
   </div>
 </div>
 
+<!-- Surrender modal -->
+<div class="modal-overlay" id="surrenderModal">
+  <div class="modal-sheet">
+    <div id="surrenderContent"></div>
+  </div>
+</div>
+
 <!-- 獎罰 modal -->
 <div class="modal-overlay" id="penaltyModal">
   <div class="modal-sheet">
@@ -340,31 +349,36 @@ function calcHandPayments(game, winners, discardIdx, fans, isZimo) {
       let dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
       let basePay = base + dealerBonusPay;
 
-      const prevCumulative = chains[pairKey] || 0;
-      const reverseCumulative = chains[reverseKey] || 0;
+      const prevCumulative = chainCum(chains[pairKey]);
+      const prevPulls = chainPulls(chains[pairKey]);
+      const reverseCumulative = chainCum(chains[reverseKey]);
 
       let thisPay = basePay;
       let newCumulative = basePay;
+      let newPulls = prevPulls;
 
       if (reverseCumulative > 0 && currentWinners.includes(lIdx)) {
         // 剪
         const clawback = Math.floor(reverseCumulative * 0.5);
         thisPay = basePay + clawback;
         newCumulative = basePay;
+        newPulls = 1;
         events.push({ type:'剪', winner:wIdx, loser:lIdx, clawback, fan, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumulative, isZimo });
       } else if (prevCumulative > 0) {
         // 拉
         const pullBonus = Math.floor(prevCumulative * 0.5);
         thisPay = basePay + pullBonus;
         newCumulative = prevCumulative + thisPay;
-        events.push({ type:'拉', winner:wIdx, loser:lIdx, pullBonus, fan, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, isZimo });
+        newPulls = prevPulls + 1;
+        events.push({ type:'拉', winner:wIdx, loser:lIdx, pullBonus, fan, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, pulls:newPulls, isZimo });
       } else {
+        newPulls = 1;
         events.push({ type:'normal', winner:wIdx, loser:lIdx, fan, dealerBonusPay, basePay, total:thisPay, isZimo });
       }
 
       payments[wIdx] += thisPay;
       payments[lIdx] -= thisPay;
-      newChains[pairKey] = newCumulative;
+      newChains[pairKey] = chainObj(newCumulative, newPulls);
     });
   });
 
@@ -377,6 +391,11 @@ function calcHandPayments(game, winners, discardIdx, fans, isZimo) {
   return { payments, newChains, events, unit };
 }
 
+// Chain helpers — chains[key] can be legacy number or {cum, pulls}
+function chainCum(val) { return (val && typeof val === 'object') ? val.cum : (val||0); }
+function chainPulls(val) { return (val && typeof val === 'object') ? val.pulls : (val>0 ? 1 : 0); }
+function chainObj(cum, pulls) { return { cum, pulls }; }
+
 function applyHand(game, result) {
   const { type, winners, discardIdx, fans } = result;
   const isZimo = type === 'zimo';
@@ -384,7 +403,7 @@ function applyHand(game, result) {
   const n = game.dealerStreak;
 
   if (type === 'liuju') {
-    return { ...game, dealerStreak: n+1, currentWinners:[], log:[{type:'流局',round:game.round},...game.log], round:game.round+1 };
+    return { ...game, dealerStreak: n+1, currentWinners:[], log:[{type:'流局', round:game.round, dealer:game.dealer, dealerStreak:n, windRound:game.windRound||0},...game.log], round:game.round+1 };
   }
 
   const { payments, newChains, events, unit } = calcHandPayments(game, winners, discardIdx, fans, isZimo);
@@ -403,6 +422,12 @@ function applyHand(game, result) {
   const newStreak = dealerWon ? n+1 : 0;
   // windRound advances each time dealer wraps from seat 3 back to seat 0
   const windRound = (game.windRound||0) + (!dealerWon && prevDealer===3 ? 1 : 0);
+  // Track max streak per player
+  const maxStreaks = {...(game.maxStreaks||{})};
+  if (dealerWon) {
+    const dealerName = game.players[prevDealer].name;
+    maxStreaks[dealerName] = Math.max(maxStreaks[dealerName]||0, newStreak);
+  }
 
   const pname = i => game.players[i].name;
   const fanDesc = winners.map(w=>`${pname(w)}${fans[w]}番`).join('、');
@@ -410,8 +435,8 @@ function applyHand(game, result) {
     ? `${winners.map(pname).join('、')} 自摸 ${fanDesc}`
     : `${winners.map(pname).join('、')} 胡 ${pname(discardIdx)} 出 ${fanDesc}`;
 
-  const log = { type:isZimo?'自摸':'食糊', desc, payments, unit, round:game.round, events, dealer:prevDealer, dealerStreak:n };
-  const newGame = { ...game, players, dealer:newDealer, dealerStreak:newStreak, windRound, chains:newChains, currentWinners:winners, log:[log,...game.log], round:game.round+1 };
+  const log = { type:isZimo?'自摸':'食糊', desc, payments, unit, round:game.round, events, dealer:prevDealer, dealerStreak:n, windRound:game.windRound||0, playerNames:game.players.map(p=>p.name) };
+  const newGame = { ...game, players, dealer:newDealer, dealerStreak:newStreak, windRound, maxStreaks, chains:newChains, currentWinners:winners, log:[log,...game.log], round:game.round+1 };
 
   // Auto-trigger 埋單 after 北圈 completes (windRound advances to 4) with no 連莊
   if (windRound >= 4 && (game.windRound||0) < 4 && newStreak === 0) {
@@ -448,32 +473,35 @@ function applyZhaHu(game, payerIdx) {
     const dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
     let basePay = ZHA_FAN + dealerBonusPay; // no 底
 
-    const prevCumulative = chains[pairKey] || 0;       // receiver had winning chain on payer
-    const reverseCumulative = chains[reverseKey] || 0; // payer had winning chain on receiver
+    const prevCumulative = chainCum(chains[pairKey]);
+    const prevPulls = chainPulls(chains[pairKey]);
+    const reverseCumulative = chainCum(chains[reverseKey]);
 
     let thisPay = basePay;
     let newCumulative = basePay;
+    let newPulls = prevPulls;
 
     if (reverseCumulative > 0 && currentWinners.includes(payerIdx)) {
-      // payer was the current winner — receivers 剪 payer's chain
       const clawback = Math.floor(reverseCumulative * 0.5);
       thisPay = basePay + clawback;
       newCumulative = basePay;
+      newPulls = 1;
       delete newChains[reverseKey];
       events.push({ type:'剪', winner:wIdx, loser:payerIdx, clawback, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumulative, isZimo:false });
     } else if (prevCumulative > 0 && currentWinners.includes(wIdx)) {
-      // receiver was current winner and had a chain on payer — 拉
       const pullBonus = Math.floor(prevCumulative * 0.5);
       thisPay = basePay + pullBonus;
       newCumulative = prevCumulative + thisPay;
-      events.push({ type:'拉', winner:wIdx, loser:payerIdx, pullBonus, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, isZimo:false });
+      newPulls = prevPulls + 1;
+      events.push({ type:'拉', winner:wIdx, loser:payerIdx, pullBonus, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, pulls:newPulls, isZimo:false });
     } else {
+      newPulls = 1;
       events.push({ type:'normal', winner:wIdx, loser:payerIdx, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, isZimo:false });
     }
 
     payments[wIdx] += thisPay;
     payments[payerIdx] -= thisPay;
-    newChains[pairKey] = newCumulative;
+    newChains[pairKey] = chainObj(newCumulative, newPulls);
   }
 
   const pname = i => game.players[i].name;
@@ -483,7 +511,7 @@ function applyZhaHu(game, payerIdx) {
     losses: p.losses + (i === payerIdx ? 1 : 0),
   }));
   const desc = `${pname(payerIdx)} 詐胡`;
-  const log = { type:'詐胡', desc, payments, unit, round:game.round, events, dealer, dealerStreak:n };
+  const log = { type:'詐胡', desc, payments, unit, round:game.round, events, dealer, dealerStreak:n, windRound:game.windRound||0, playerNames:game.players.map(p=>p.name) };
   // dealer/dealerStreak/windRound/currentWinners all unchanged
   return { ...game, players, chains:newChains, log:[log,...game.log], round:game.round+1 };
 }
@@ -514,7 +542,7 @@ function applyPenalty(game, subjectIdx, otherIdx, di, dir) {
     ? `${pname(subjectIdx)} 獎罰 付${di}底 → ${otherDesc}`
     : `${pname(subjectIdx)} 獎罰 收${di}底 ← ${otherDesc}`;
   const players = game.players.map((p,i) => ({ ...p, score: p.score + payments[i]*unit }));
-  const log = { type:'獎罰', desc, payments, unit, round:game.round, events:[], dealer:game.dealer, dealerStreak:game.dealerStreak };
+  const log = { type:'獎罰', desc, payments, unit, round:game.round, events:[], dealer:game.dealer, dealerStreak:game.dealerStreak, windRound:game.windRound||0, playerNames:game.players.map(p=>p.name) };
   return { ...game, players, log:[log,...game.log], round:game.round+1 };
 }
 
@@ -599,7 +627,7 @@ function renderSetup() {
   return `<div class="setup-page" style="overflow-y:auto;height:100%">
     <button class="back-btn" onclick="S.view='home';render()">← 返回</button>
     <div class="setup-title">新遊戲設定</div>
-    <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">選擇座位 (東→南→西→北)</div>
+    <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">選擇座位</div>
     ${seats.map((s,i)=>`<div class="seat-row" onclick="pickSeat(${i})">
       <div class="seat-wind">${WINDS[i]}</div>
       ${s
@@ -607,9 +635,9 @@ function renderSetup() {
            <button class="seat-clear" onclick="clearSeat(event,${i})">✕</button>`
         : `<div class="seat-empty" style="flex:1">點擊選擇牌友</div><div style="color:var(--text3)">›</div>`}
     </div>`).join('')}
-    <div class="setup-label">出銃底注 ($/番)</div>
+    <div class="setup-label">出銃 ($/番)</div>
     <input class="unit-input" type="number" id="unitHuInput" value="${S.setupUnitHu}" min="1" placeholder="例：2">
-    <div class="setup-label">自摸底注 ($/番)</div>
+    <div class="setup-label">自摸 ($/番)</div>
     <input class="unit-input" type="number" id="unitZimoInput" value="${S.setupUnitZimo}" min="1" placeholder="例：1">
     <button class="start-btn" ${ready?'':'disabled'} onclick="startGame()">開局！</button>
   </div>`;
@@ -734,36 +762,40 @@ function renderGameTab() {
     const p = g.players[idx];
     const isDealer = idx===g.dealer;
     const sc = p.score;
-    // Wind position relative to dealer: dealer=東, dealer+1=南, dealer+2=西, dealer+3=北
     const relWind = WINDS[(idx - g.dealer + 4) % 4];
     const posLabel = `${windCircle}${relWind}位`;
+    const streakLabel = isDealer && g.dealerStreak > 0 ? `<div style="font-size:10px;color:var(--dealer-bg);font-weight:700;margin-top:2px">連莊×${g.dealerStreak}</div>` : '';
     return `<div class="player-card ${isDealer?'is-dealer':''}" onclick="tapWinner(${idx})">
       ${isDealer?`<div class="dealer-badge">莊</div>`:''}
       <div class="player-emoji">${p.emoji}</div>
       <div class="player-name">${esc(p.name)}</div>
-      <div style="font-size:9px;color:var(--text3);margin-bottom:2px">${posLabel}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:3px;font-weight:500">${posLabel}</div>
       <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
+      ${streakLabel}
     </div>`;
   };
 
   const windLabel = windCircle+WINDS[g.dealer]+'風';
+
+  // Fixed seats — NEVER rotate. player[0]=bottom, [1]=right, [2]=top, [3]=left
+  // Only 莊 badge and X圈X位 label move, not the card positions
 
   return `<div class="game-page">
     <div class="round-info">
       <div class="round-badge"><span>${windLabel}</span><span class="arrow">›</span><span style="color:var(--text2)">第${g.round}局</span><span style="color:var(--text3);font-size:11px">出銃$${g.unitHu} 自摸$${g.unitZimo}</span>${g.dealerStreak>0?`<span style="color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</span>`:''}</div>
     </div>
     <div class="cross-outer">
-      <div style="grid-column:2;grid-row:1">${card(0)}</div>
-      <div style="grid-column:1;grid-row:2">${card(3)}</div>
-      <div class="cross-center-col" style="grid-column:2;grid-row:2">
+      <div class="cross-card-wrap" style="grid-column:2;grid-row:1">${card(2)}</div>
+      <div class="cross-card-wrap-side" style="grid-column:1;grid-row:2">${card(3)}</div>
+      <div class="cross-center-col" style="grid-column:2;grid-row:2;align-self:center">
         <div class="center-wind">${windLabel}</div>
         <button class="liuju-btn" onclick="recordLiuju()">流局</button>
       </div>
-      <div style="grid-column:3;grid-row:2">${card(1)}</div>
-      <div style="grid-column:2;grid-row:3">${card(2)}</div>
+      <div class="cross-card-wrap-side" style="grid-column:3;grid-row:2">${card(1)}</div>
+      <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
     </div>
-    <div style="display:flex;justify-content:flex-end;margin-top:8px;padding-bottom:8px">
-      ${g.log.length>0?`<button onclick="undoLast()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-right:auto">↩ 撤銷</button>`:''}
+    <div style="display:flex;justify-content:flex-end;align-items:center;padding:8px 0;flex-shrink:0">
+      ${(()=>{ const s=loadUndoStack(); return s.length>0?`<button onclick="undoLast()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-right:auto">↩ 撤銷(${s.length})</button>`:''; })()}
       <button onclick="openMaidanModal()" style="background:none;border:none;font-size:13px;color:var(--tab-active);cursor:pointer;font-family:'Noto Sans TC',sans-serif">💰 埋單</button>
       <button onclick="openSwapModal()" style="background:none;border:none;font-size:13px;color:var(--orange);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⇄ 換人</button>
       <button onclick="S.view='home';render()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⚙</button>
@@ -779,13 +811,30 @@ function renderStatsTab() {
   const maxHu = Math.max(...allPlayers.map(p=>p.huWins||0));
   const maxZimo = Math.max(...allPlayers.map(p=>p.zimoWins||0));
   const maxShots = Math.max(...allPlayers.map(p=>p.shots||0));
+  const maxStreaks = g.maxStreaks || {};
+  // Include current streak
+  if (g.dealerStreak > 0) {
+    const dealerName = g.players[g.dealer].name;
+    maxStreaks[dealerName] = Math.max(maxStreaks[dealerName]||0, g.dealerStreak);
+  }
+  const topStreakVal = Math.max(0, ...Object.values(maxStreaks));
+  const topStreakPlayers = Object.entries(maxStreaks).filter(([,v])=>v===topStreakVal&&topStreakVal>0).map(([n])=>n);
 
   return `<div class="stats-page">
+    ${topStreakVal > 0 ? `<div class="stat-card" style="background:var(--bg2);border:none">
+      <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:4px">🏆 連莊王</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${topStreakPlayers.map(n=>{const p=allPlayers.find(x=>x.name===n);return p?`<span style="font-size:20px">${p.emoji}</span><span style="font-size:15px;font-weight:700">${esc(n)}</span>`:''}).join('')}
+        <span style="font-size:22px;font-weight:900;color:var(--dealer-bg);margin-left:auto">×${topStreakVal}</span>
+      </div>
+    </div>`:''}
     ${g.bench&&g.bench.length>0?`<div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:8px;letter-spacing:0.5px">現在在座</div>`:''}
     ${g.players.map((p,i)=>{
       const isTopHu = (p.huWins||0)===maxHu&&maxHu>0;
       const isTopZimo = (p.zimoWins||0)===maxZimo&&maxZimo>0;
       const isTopShots = (p.shots||0)===maxShots&&maxShots>0;
+      const playerMaxStreak = maxStreaks[p.name]||0;
+      const isTopStreak = topStreakPlayers.includes(p.name) && topStreakVal > 0;
       return `<div class="stat-card">
         <div class="stat-header">
           <span class="stat-emoji">${p.emoji}</span>
@@ -794,6 +843,7 @@ function renderStatsTab() {
           ${isTopHu?'<span class="stat-pill">食糊王</span>':''}
           ${isTopZimo?'<span class="stat-pill">自摸王</span>':''}
           ${isTopShots?'<span class="stat-pill">出銃王</span>':''}
+          ${isTopStreak?'<span class="stat-pill">連莊王</span>':''}
         </div>
         <div class="stat-grid">
           <div><div class="stat-num">${p.huWins||0}${isTopHu?'<span style="font-size:12px"> 👑</span>':''}</div><div class="stat-label">食糊</div></div>
@@ -801,6 +851,7 @@ function renderStatsTab() {
           <div><div class="stat-num">${p.shots||0}${isTopShots?'<span style="font-size:12px"> 👑</span>':''}</div><div class="stat-label">出銃</div></div>
           <div><div class="stat-num" style="color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div><div class="stat-label">總分</div></div>
         </div>
+        ${playerMaxStreak>0?`<div style="font-size:11px;color:var(--dealer-bg);margin-top:8px;font-weight:600">最長連莊 ×${playerMaxStreak}</div>`:''}
       </div>`;
     }).join('')}
     ${g.bench&&g.bench.length>0?`
@@ -824,35 +875,80 @@ function renderStatsTab() {
 function renderLogTab() {
   const g = S.game;
   if (!g) return '<div class="empty-state" style="padding-top:60px">尚未開局</div>';
-  const logs = [...g.log].reverse(); // chronological
-
-  // All players ever in this game (current + bench)
+  // Latest first (g.log is already latest first since we prepend)
+  const logs = g.log;
   const allPlayers = [...g.players, ...(g.bench||[])];
 
-  // Build name→score running totals
-  const running = {};
-  allPlayers.forEach(p => running[p.name] = 0);
-
   const rows = logs.map(l => {
+    const lWindRound = (l.windRound||0) % 4;
+    const circleWind = WINDS[lWindRound];
+    const dealerWind = WINDS[l.dealer||0];
+    const windLabel = circleWind + dealerWind;
+    const streakSuffix = (l.dealerStreak||0) > 0 ? `×${(l.dealerStreak||0)+1}` : '';
+
     if (l.type === '流局') {
-      return `<tr class="log-row"><td><div class="wind-cell">流局</div></td>${allPlayers.map(()=>`<td class="score-cell zero">-</td>`).join('')}</tr>`;
+      return `<tr class="log-row">
+        <td><div class="wind-cell">${windLabel}<br><span style="font-size:9px">流局</span></div></td>
+        ${allPlayers.map(()=>`<td class="score-cell zero">-</td>`).join('')}
+      </tr>`;
     }
-    if (l.type === '換人') {
-      return `<tr class="log-row" style="background:var(--bg2)"><td><div class="wind-cell" style="font-size:9px">換人</div></td>${allPlayers.map(()=>`<td class="score-cell zero" style="font-size:10px">-</td>`).join('')}</tr>`;
+    if (l.type === '換人' || l.type === '投降') {
+      const icon = l.type === '投降' ? '🏳️' : '⇄';
+      return `<tr class="log-row">
+        <td colspan="${allPlayers.length+1}" style="padding:6px 8px;background:var(--bg2);font-size:11px;color:var(--text3);border-radius:4px">${icon} ${esc(l.desc||l.type)}</td>
+      </tr>`;
     }
-    // l.payments is indexed by seat. Need to map seat→name using the snapshot at time of hand.
-    // We store dealer/dealerStreak but not the full player list per hand.
-    // Best approach: match current player names to payments by seat index for current players,
-    // bench players get 0 for rounds they weren't seated.
-    // Since bench players' payments were already applied to their score when they were active,
-    // we track cumulative score changes per name using the payments + unit stored in log.
-    g.players.forEach((p,i) => { if (l.payments[i]) running[p.name] = (running[p.name]||0) + l.payments[i]*l.unit; });
+
+    // Map payments: try to match by name for bench players
+    const payByName = {};
+    if (l.payments && l.playerNames) {
+      // If we stored player names in log (new format)
+      l.playerNames.forEach((name, i) => { payByName[name] = l.payments[i] || 0; });
+    } else {
+      // Old format: match by current seat index
+      g.players.forEach((p,i) => { payByName[p.name] = (l.payments||[])[i] || 0; });
+    }
+
+    // Parse desc to get per-player sub-labels
+    // e.g. "Anders 自摸 5番" → Anders gets "自摸5番"
+    // e.g. "Anders 胡 Rosie 出 5番" → Anders gets "食5番", Rosie gets "出銃5番"
+    const cellDesc = {};
+    if (l.desc && l.type === '自摸') {
+      // Format: "Anders 自摸 Anders5番" or "Anders 自摸 Anders5番、Rosie5番"
+      // winners are everyone with positive payment
+      const fanParts = (l.desc.split(' 自摸 ')[1] || '').split('、');
+      fanParts.forEach(part => {
+        const m = part.match(/^(.+?)(\d+)番$/);
+        if (m) cellDesc[m[1]] = `自摸${m[2]}番`;
+      });
+    } else if (l.desc && l.type === '食糊') {
+      // Format: "Anders 胡 Rosie 出 Anders10番"
+      const huParts = l.desc.match(/^(.+?) 胡 (.+?) 出 (.+)$/);
+      if (huParts) {
+        const winnerStr = huParts[1];
+        const discardStr = huParts[2];
+        const fanStr = huParts[3]; // e.g. "Anders10番"
+        const fanMatch = fanStr.match(/(\d+)番/);
+        const fan = fanMatch ? fanMatch[1] : '';
+        winnerStr.split('、').forEach(n => { cellDesc[n] = `食${fan}番`; });
+        cellDesc[discardStr] = `出銃${fan}番`;
+      }
+    } else if (l.desc && l.type === '詐胡') {
+      const m = l.desc.match(/^(.+?) 詐胡/);
+      if (m) cellDesc[m[1]] = '詐胡';
+    } else if (l.desc && l.type === '獎罰') {
+      const m = l.desc.match(/^(.+?) 獎罰 (付|收)(\d+)底/);
+      if (m) cellDesc[m[1]] = `${m[2]}${m[3]}底`;
+    }
+
     return `<tr class="log-row">
-      <td><div class="wind-cell">${WINDS[l.dealer]||'?'}${l.dealerStreak>0?'×'+(l.dealerStreak+1):''}</div></td>
+      <td>
+        <div class="wind-cell">${windLabel}${streakSuffix}</div>
+      </td>
       ${allPlayers.map(p => {
-        const seatIdx = g.players.findIndex(cp=>cp.name===p.name);
-        const pay = seatIdx >= 0 ? (l.payments[seatIdx]||0) : 0;
-        return `<td class="score-cell ${scoreClass(pay)}">${pay!==0?fmt(pay*l.unit):'0'}</td>`;
+        const pay = payByName[p.name] || 0;
+        const sub = cellDesc[p.name] ? `<div style="font-size:9px;color:var(--text3);margin-top:1px">${cellDesc[p.name]}</div>` : '';
+        return `<td class="score-cell ${scoreClass(pay)}" style="vertical-align:top;padding-top:8px">${pay!==0?fmt(pay*l.unit):'0'}${sub}</td>`;
       }).join('')}
     </tr>`;
   });
@@ -860,12 +956,12 @@ function renderLogTab() {
   return `<div class="log-page" style="overflow-x:auto">
     <table class="log-table">
       <thead class="log-header"><tr>
-        <td style="width:44px"></td>
+        <td style="width:52px"></td>
         ${allPlayers.map(p=>`<td class="player-col"><div>${p.emoji}</div><div>${esc(p.name)}</div><div style="font-size:12px;font-weight:700;color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div></td>`).join('')}
       </tr></thead>
       <tbody>
-        <tr class="log-row"><td></td>${allPlayers.map(()=>`<td class="score-cell zero">0</td>`).join('')}</tr>
         ${rows.join('')}
+        <tr class="log-row"><td><div class="wind-cell" style="font-size:9px">開始</div></td>${allPlayers.map(()=>`<td class="score-cell zero">0</td>`).join('')}</tr>
       </tbody>
     </table>
   </div>`;
@@ -1117,8 +1213,8 @@ function renderZhaHuModal() {
       const loserIsDealer = payerIdx === dealer;
       const dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
       let basePay = ZHA_FAN + dealerBonusPay;
-      const prevCumulative = chains[pairKey] || 0;
-      const reverseCumulative = chains[reverseKey] || 0;
+      const prevCumulative = chainCum(chains[pairKey]);
+      const reverseCumulative = chainCum(chains[reverseKey]);
       let thisPay = basePay;
       const wn = g.players[wIdx].name;
       const ln = g.players[payerIdx].name;
@@ -1360,24 +1456,131 @@ function openEditProfile(idx) {
   render();
 }
 
+// ── Surrender (投降) ──────────────────────────────────────────────────────────
+function checkSurrenderPrompt() {
+  const g = S.game;
+  const chains = g.chains || {};
+  const unit = g.unitHu || g.unit || 1;
+  // Find all pairs where pulls is a multiple of 3
+  const eligible = [];
+  Object.entries(chains).forEach(([key, val]) => {
+    const pulls = chainPulls(val);
+    const cum = chainCum(val);
+    if (pulls > 0 && pulls % 3 === 0) {
+      const [wIdx, lIdx] = key.split('-').map(Number);
+      eligible.push({
+        key,
+        wIdx, lIdx,
+        pulls,
+        cumDollars: cum * unit,
+        wName: g.players[wIdx]?.name,
+        lName: g.players[lIdx]?.name,
+      });
+    }
+  });
+  if (eligible.length === 0) return;
+  S.surrenderEligible = eligible;
+  S.surrenderToggles = {}; // lIdx→boolean
+  document.getElementById('surrenderModal').classList.add('open');
+  renderSurrenderModal();
+}
+
+function renderSurrenderModal() {
+  const g = S.game;
+  const eligible = S.surrenderEligible || [];
+  const toggles = S.surrenderToggles || {};
+
+  document.getElementById('surrenderContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="modal-title" style="color:var(--orange)">投降選項</div>
+      <button onclick="closeSurrenderModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">跳過</button>
+    </div>
+    <div class="modal-sub">以下玩家已被拉 ${eligible[0]?.pulls} 次，可選擇投降</div>
+    ${eligible.map(e=>{
+      const loserPlayer = g.players[e.lIdx];
+      const winnerPlayer = g.players[e.wIdx];
+      const isSurrendering = !!toggles[e.key];
+      return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--bg2)">
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700">${winnerPlayer?.emoji} ${esc(e.wName)} 拉 ${loserPlayer?.emoji} ${esc(e.lName)}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">累計 $${e.cumDollars} · 已拉 ${e.pulls} 次</div>
+        </div>
+        <button onclick="toggleSurrender('${e.key}')"
+          style="padding:8px 16px;border-radius:99px;border:2px solid ${isSurrendering?'var(--orange)':'var(--bg2)'};
+          background:${isSurrendering?'#fff7ed':'var(--bg)'};color:${isSurrendering?'var(--orange)':'var(--text2)'};
+          font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap">
+          ${isSurrendering?'✓ 投降':'投降'}
+        </button>
+      </div>`;
+    }).join('')}
+    <button class="confirm-btn" style="margin-top:8px" onclick="confirmSurrender()">確認</button>
+  `;
+}
+
+function toggleSurrender(key) {
+  S.surrenderToggles[key] = !S.surrenderToggles[key];
+  renderSurrenderModal();
+}
+
+function closeSurrenderModal() {
+  document.getElementById('surrenderModal').classList.remove('open');
+  S.surrenderEligible = [];
+  S.surrenderToggles = {};
+}
+
+function confirmSurrender() {
+  const toggles = S.surrenderToggles || {};
+  const surrendered = Object.entries(toggles).filter(([,v])=>v).map(([k])=>k);
+  if (surrendered.length === 0) { closeSurrenderModal(); return; }
+  // Remove surrendered chains from game state
+  const newChains = { ...S.game.chains };
+  surrendered.forEach(key => { delete newChains[key]; });
+  // Build log description
+  const g = S.game;
+  const descs = surrendered.map(key => {
+    const [wIdx, lIdx] = key.split('-').map(Number);
+    return `${g.players[lIdx]?.name} 投降 ${g.players[wIdx]?.name}`;
+  });
+  const log = {
+    type:'投降',
+    desc: descs.join('、'),
+    payments:[0,0,0,0],
+    unit:g.unitHu||1,
+    round:g.round,
+    events:[],
+    dealer:g.dealer,
+    dealerStreak:g.dealerStreak,
+    windRound:g.windRound||0,
+    playerNames:g.players.map(p=>p.name)
+  };
+  saveWithUndo({ ...g, chains:newChains, log:[log,...g.log] });
+  closeSurrenderModal();
+  renderTab();
+}
+
 // ── Undo ──────────────────────────────────────────────────────────────────────
 const UNDO_KEY = 'mj_undo_v1';
-function saveUndo(game) { try { localStorage.setItem(UNDO_KEY, JSON.stringify(game)); } catch {} }
-function loadUndo() { try { return JSON.parse(localStorage.getItem(UNDO_KEY)); } catch { return null; } }
+function loadUndoStack() { try { return JSON.parse(localStorage.getItem(UNDO_KEY)) || []; } catch { return []; } }
+function saveUndoStack(stack) { try { localStorage.setItem(UNDO_KEY, JSON.stringify(stack)); } catch {} }
 function clearUndo() { localStorage.removeItem(UNDO_KEY); }
 
 function undoLast() {
-  const prev = loadUndo();
-  if (!prev) { alert('沒有可撤銷的操作'); return; }
-  if (!confirm('撤銷上一步？')) return;
+  const stack = loadUndoStack();
+  if (stack.length === 0) { alert('沒有可撤銷的操作'); return; }
+  if (!confirm(`撤銷上一步？(還可再撤銷 ${stack.length-1} 步)`)) return;
+  const prev = stack.pop();
+  saveUndoStack(stack);
   S.game = prev;
-  clearUndo();
   saveGame(S.game);
   renderTab();
 }
 
 function saveWithUndo(newGame) {
-  saveUndo(S.game); // save current before overwriting
+  const stack = loadUndoStack();
+  stack.push(S.game); // push current state onto stack
+  // Keep max 30 undo steps to avoid localStorage overflow
+  if (stack.length > 30) stack.shift();
+  saveUndoStack(stack);
   S.game = newGame;
   saveGame(S.game);
 }
@@ -1431,6 +1634,8 @@ function confirmWin() {
   if(!allFansSet || w.winners.length===0 || (!isZimo && w.discard===null)) return;
   saveWithUndo(applyHand(S.game,{type:w.type,winners:w.winners,discardIdx:w.discard,fans:w.fans}));
   closeWinModal();
+  // Check for surrender eligibility after hand settled
+  checkSurrenderPrompt();
   renderTab();
 }
 
