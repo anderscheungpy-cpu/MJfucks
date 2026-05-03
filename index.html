@@ -632,6 +632,7 @@ function renderHome() {
     <div class="home-sub">港式台灣牌<br>拉 · 剪 · 連莊</div>
     <button class="home-btn primary" style="width:100%" onclick="goSetup()">新遊戲</button>
     <button class="home-btn secondary" style="width:100%;margin-top:8px" onclick="S.view='profiles';render()">牌友管理</button>
+    <button class="home-btn secondary" style="width:100%;margin-top:8px" onclick="promptWatchCode()">👁 觀看直播</button>
     ${(()=>{const d=loadDaily();return Object.keys(d.totals).length>0?`<button class="home-btn" style="width:100%;margin-top:8px;background:#2d7a4f;color:#fff;border:none" onclick="openPushModal()">推送至 Lovable</button>`:''})()}
   </div>`;
 }
@@ -929,32 +930,32 @@ function renderLogTab() {
     // e.g. "Anders 自摸 5番" → Anders gets "自摸5番"
     // e.g. "Anders 胡 Rosie 出 5番" → Anders gets "食5番", Rosie gets "出銃5番"
     const cellDesc = {};
+    const addDesc = (name, text) => { cellDesc[name] = cellDesc[name] ? cellDesc[name] + ' + ' + text : text; };
     if (l.desc && l.type === '自摸') {
-      // Format: "Anders 自摸 Anders5番" or "Anders 自摸 Anders5番、Rosie5番"
-      // winners are everyone with positive payment
       const fanParts = (l.desc.split(' 自摸 ')[1] || '').split('、');
       fanParts.forEach(part => {
         const m = part.match(/^(.+?)(\d+)番$/);
-        if (m) cellDesc[m[1]] = `自摸${m[2]}番`;
+        if (m) addDesc(m[1], `自摸${m[2]}番`);
       });
     } else if (l.desc && l.type === '食糊') {
-      // Format: "Anders 胡 Rosie 出 Anders10番"
       const huParts = l.desc.match(/^(.+?) 胡 (.+?) 出 (.+)$/);
       if (huParts) {
-        const winnerStr = huParts[1];
         const discardStr = huParts[2];
-        const fanStr = huParts[3]; // e.g. "Anders10番"
-        const fanMatch = fanStr.match(/(\d+)番/);
-        const fan = fanMatch ? fanMatch[1] : '';
-        winnerStr.split('、').forEach(n => { cellDesc[n] = `食${fan}番`; });
-        cellDesc[discardStr] = `出銃${fan}番`;
+        const fanParts2 = huParts[3].split('、');
+        fanParts2.forEach(part => {
+          const m = part.match(/^(.+?)(\d+)番$/);
+          if (m) {
+            addDesc(m[1], `食${m[2]}番`);
+            addDesc(discardStr, `出銃${m[2]}番`);
+          }
+        });
       }
     } else if (l.desc && l.type === '詐胡') {
       const m = l.desc.match(/^(.+?) 詐胡/);
-      if (m) cellDesc[m[1]] = '詐胡';
+      if (m) addDesc(m[1], '詐胡');
     } else if (l.desc && l.type === '獎罰') {
       const m = l.desc.match(/^(.+?) 獎罰 (付|收)(\d+)底/);
-      if (m) cellDesc[m[1]] = `${m[2]}${m[3]}底`;
+      if (m) addDesc(m[1], `${m[2]}${m[3]}底`);
     }
 
     return `<tr class="log-row">
@@ -1000,14 +1001,14 @@ function renderWinModal() {
     <div style="margin-bottom:12px">
       <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px">${p.emoji} ${esc(p.name)} 番數</div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button ontouchstart="startRepeat(${wi},-1)" ontouchend="stopRepeat()" onmousedown="startRepeat(${wi},-1)" onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+        <button ontouchstart="startRepeat(${wi},-1,event)" ontouchend="stopRepeat()" ontouchcancel="stopRepeat()" onmousedown="startRepeat(${wi},-1,event)" onmouseup="stopRepeat()"
           style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">−</button>
         <div style="flex:1;position:relative">
           <input id="fan-input-${wi}" type="number" min="1" max="250" value="${curFan}"
             oninput="fanTyped(${wi},this.value)"
             style="width:100%;height:52px;text-align:center;font-size:26px;font-weight:900;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);color:var(--orange);font-family:'Noto Sans TC',sans-serif;-moz-appearance:textfield;outline:none;">
         </div>
-        <button ontouchstart="startRepeat(${wi},1)" ontouchend="stopRepeat()" onmousedown="startRepeat(${wi},1)" onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+        <button ontouchstart="startRepeat(${wi},1,event)" ontouchend="stopRepeat()" ontouchcancel="stopRepeat()" onmousedown="startRepeat(${wi},1,event)" onmouseup="stopRepeat()"
           style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">＋</button>
       </div>
     </div>`;
@@ -1083,12 +1084,16 @@ function renderWinModal() {
 // ── Fan input helpers ─────────────────────────────────────────────────────────
 let _repeatTimer = null;
 let _repeatInterval = null;
+let _repeatActive = false;
 
-function startRepeat(wi, delta) {
+function startRepeat(wi, delta, e) {
+  if (e) e.preventDefault(); // prevent mouse event firing after touch
+  if (_repeatActive) return;
+  _repeatActive = true;
   adjustFan(wi, delta);
   _repeatTimer = setTimeout(() => {
-    _repeatInterval = setInterval(() => adjustFan(wi, delta), 200);
-  }, 600);
+    _repeatInterval = setInterval(() => adjustFan(wi, delta), 250);
+  }, 700);
 }
 
 function stopRepeat() {
@@ -1096,6 +1101,7 @@ function stopRepeat() {
   clearInterval(_repeatInterval);
   _repeatTimer = null;
   _repeatInterval = null;
+  _repeatActive = false;
 }
 
 function fanTyped(wi, val) {
@@ -1495,6 +1501,9 @@ function renderLiveModal(state, msg) {
         <div style="font-size:48px;font-weight:900;letter-spacing:8px;color:#2d7a4f">${code}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:6px;word-break:break-all">${spectatorUrl}</div>
       </div>
+      <button onclick="copyLiveLink('${spectatorUrl}')" style="width:100%;padding:10px;border-radius:var(--radius-sm);border:1.5px solid #2d7a4f;background:var(--bg);color:#2d7a4f;font-size:14px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-bottom:8px">
+        📋 複製邀請連結
+      </button>
       <div id="liveQR" style="display:flex;justify-content:center;margin-bottom:12px"></div>
       <button class="confirm-btn" style="background:var(--red)" onclick="stopLive()">停止直播</button>
     ` : `
@@ -1520,6 +1529,32 @@ function generateQR(text) {
   // Simple QR using a free API
   const encoded = encodeURIComponent(text);
   return `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encoded}" style="border-radius:8px;border:4px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.1)">`;
+}
+
+function leaveSpectator() {
+  if (S.spectatorPoll) clearInterval(S.spectatorPoll);
+  S.spectatorCode = null;
+  S.spectatorGame = null;
+  S.view = 'home';
+  // Remove ?watch= from URL
+  history.replaceState({}, '', location.pathname);
+  render();
+}
+
+function copyLiveLink(url) {
+  const text = `來圍觀我們打麻雀！🀄 ${url}`;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('已複製邀請連結 ✓');
+  }).catch(() => {
+    // Fallback for older browsers
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast('已複製邀請連結 ✓');
+  });
 }
 
 async function startLive() {
@@ -1591,12 +1626,20 @@ function checkSpectatorMode() {
   const params = new URLSearchParams(location.search);
   const code = params.get('watch');
   if (!code) return;
-  // Enter spectator mode
   S.spectatorCode = code;
   S.spectatorGame = null;
   S.view = 'spectator';
-  render();
   subscribeSpectator(code);
+}
+
+function promptWatchCode() {
+  const code = prompt('輸入直播代碼 (4位數字)');
+  if (!code || !/^\d{4}$/.test(code.trim())) return;
+  S.spectatorCode = code.trim();
+  S.spectatorGame = null;
+  S.view = 'spectator';
+  render();
+  subscribeSpectator(code.trim());
 }
 
 async function subscribeSpectator(code) {
@@ -1676,7 +1719,8 @@ function renderSpectatorView() {
         <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
       </div>
       ${latestDesc}
-      <div style="text-align:center;font-size:11px;color:var(--text3);padding-bottom:8px">每3秒更新 · 代碼 ${S.spectatorCode}</div>
+      <div style="text-align:center;font-size:11px;color:var(--text3);padding-bottom:4px">每3秒更新 · 代碼 ${S.spectatorCode}</div>
+      <button onclick="leaveSpectator()" style="width:100%;padding:8px;border:none;background:none;color:var(--text3);font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 離開</button>
     </div>`;
 }
 
@@ -1872,6 +1916,33 @@ function recordLiuju() {
 function goSetup() { S.view='setup'; S.setupSeats=[null,null,null,null]; render(); }
 function resumeGame() { S.view='game'; S.tab='game'; render(); }
 
+async function pushSessionStats(game, allPlayers) {
+  try {
+    const headers = {
+      'Content-Type': 'application/json',
+      'apikey': LIVE_KEY,
+      'Authorization': `Bearer ${LIVE_KEY}`,
+    };
+    const date = today();
+    const rows = allPlayers.map(p => ({
+      session_date: date,
+      player_name: p.name,
+      zimo_count: p.zimoWins || 0,
+      hu_count: p.huWins || 0,
+      shot_count: p.shots || 0,
+      net_score: p.score || 0,
+    }));
+    await fetch(`${LIVE_URL}/rest/v1/session_stats`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(rows),
+    });
+  } catch(e) {
+    // Silent fail — don't interrupt the game flow
+    console.warn('session stats push failed:', e);
+  }
+}
+
 function endGame() {
   if(!confirm('確定結束本局？')) return;
   const g=S.game;
@@ -1886,6 +1957,8 @@ function endGame() {
   });
   saveProfiles(S.profiles);
   const daily = accumulateDaily(allPlayers);
+  // Push session stats to Supabase for analysis
+  pushSessionStats(g, allPlayers);
   clearGame();
   S.game=null;
   S.view='home';
