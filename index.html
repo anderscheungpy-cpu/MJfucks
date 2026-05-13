@@ -186,7 +186,7 @@
   /* ── Modal ── */
   .modal-overlay { position: fixed; inset: 0; background: var(--modal-overlay); z-index: 100; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
   .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal-sheet { background: var(--card); border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; padding: 20px 20px 36px; transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.32,0.72,0,1); max-height: 88vh; overflow-y: auto; }
+  .modal-sheet { background: var(--card); border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; padding: 20px 20px 36px; transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.32,0.72,0,1); max-height: 92vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .modal-overlay.open .modal-sheet { transform: translateY(0); }
   .modal-title { font-size: 20px; font-weight: 900; margin-bottom: 4px; }
   .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
@@ -1772,7 +1772,6 @@ function copyLiveLink(url) {
 async function startLive() {
   renderLiveModal('loading');
   try {
-    // Generate a 4-digit code
     const code = String(Math.floor(1000 + Math.random() * 9000));
     const headers = {
       'Content-Type': 'application/json',
@@ -1780,7 +1779,6 @@ async function startLive() {
       'Authorization': `Bearer ${LIVE_KEY}`,
       'Prefer': 'return=representation',
     };
-    // Create session row
     const res = await fetch(`${LIVE_URL}/rest/v1/live_sessions`, {
       method: 'POST',
       headers,
@@ -1790,13 +1788,19 @@ async function startLive() {
         updated_at: new Date().toISOString(),
       }),
     });
-    if (!res.ok) throw new Error(`建立失敗 (${res.status})`);
+    if (!res.ok) {
+      const errText = await res.text().catch(()=>'');
+      throw new Error(`建立失敗 (${res.status}) ${errText.slice(0,100)}`);
+    }
     S.liveCode = code;
     localStorage.setItem(LIVE_SESSION_KEY, code);
     renderLiveModal('idle');
-    renderTab(); // update 直播中 indicator
+    renderTab();
   } catch(e) {
-    renderLiveModal('error', e.message);
+    const msg = e.message.includes('Failed to fetch') || e.message.includes('Load failed')
+      ? '網絡錯誤 — 請檢查網絡連接或 Supabase 設定'
+      : e.message;
+    renderLiveModal('error', msg);
   }
 }
 
@@ -2370,7 +2374,7 @@ function renderFanshuEdit() {
 
     <!-- Category tabs -->
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
-      ${FANSHU_CATS.map(c=>`<button onclick="S.fanshuCat='${c}';render()"
+      ${FANSHU_CATS.map(c=>`<button onclick="S.fanshuCat='${c}';renderFanshuPage()"
         style="padding:5px 10px;border-radius:99px;border:1px solid ${c===cat?'var(--orange)':'var(--bg2)'};
         background:${c===cat?'#fff7ed':'var(--bg)'};color:${c===cat?'var(--orange)':'var(--text2)'};
         font-size:11px;font-weight:${c===cat?'700':'400'};cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap">
@@ -2407,15 +2411,20 @@ function renderFanshuEdit() {
   </div>`;
 }
 
+function renderFanshuPage() {
+  const mc = document.getElementById('main-content');
+  if (mc) mc.innerHTML = renderFanshuEdit();
+}
+
 function toggleFanshu(id) {
   const r = S.fanshu.find(x=>x.id===id);
   if (r) r.enabled = !r.enabled;
-  render();
+  renderFanshuPage();
 }
 function adjustFanshuVal(id, delta) {
   const r = S.fanshu.find(x=>x.id===id);
   if (r) r.fan = Math.max(1, r.fan + delta);
-  render();
+  renderFanshuPage();
 }
 function setFanshuVal(id, val) {
   const r = S.fanshu.find(x=>x.id===id);
@@ -2424,9 +2433,9 @@ function setFanshuVal(id, val) {
 }
 function resetFanshu() {
   if (!confirm('重設所有番數至預設值？')) return;
-  S.fanshu = FANSHU_DEFAULT.map(r=>({...r, enabled:true}));
+  S.fanshu = FANSHU_DEFAULT.map(r=>({...r, enabled: r.defaultOff ? false : true}));
   saveFanshu(S.fanshu);
-  render();
+  renderFanshuPage();
 }
 
 // ── 番數表 reference modal (in-game read-only) ────────────────────────────────
