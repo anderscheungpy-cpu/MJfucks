@@ -299,13 +299,6 @@
   </div>
 </div>
 
-<!-- 番數表 reference modal -->
-<div class="modal-overlay" id="fanshuRefModal">
-  <div class="modal-sheet" style="max-height:92vh;overflow-y:auto">
-    <div id="fanshuRefContent"></div>
-  </div>
-</div>
-
 <!-- 計番 modal -->
 <div class="modal-overlay" id="jifanModal">
   <div class="modal-sheet" style="max-height:94vh;overflow-y:auto">
@@ -804,9 +797,6 @@ function render() {
     tb.style.display='flex';
     mc.innerHTML = renderGameShell();
     renderTab();
-  } else if (S.view === 'fanshuEdit') {
-    tb.style.display='none';
-    mc.innerHTML = renderFanshuEdit();
   } else if (S.view === 'spectator') {
     tb.style.display='none';
     renderSpectatorView();
@@ -866,7 +856,6 @@ function renderSetup() {
     <input class="unit-input" type="number" id="unitHuInput" value="${S.setupUnitHu}" min="1" placeholder="例：2">
     <div class="setup-label">自摸 ($/番)</div>
     <input class="unit-input" type="number" id="unitZimoInput" value="${S.setupUnitZimo}" min="1" placeholder="例：1">
-    <button class="home-btn secondary" style="margin-top:8px" onclick="S.view='fanshuEdit';render()">📋 設定番數表</button>
     <button class="start-btn" ${ready?'':'disabled'} onclick="startGame()">開局！</button>
   </div>`;
 }
@@ -1025,7 +1014,6 @@ function renderGameTab() {
     <div style="display:flex;justify-content:flex-end;align-items:center;padding:8px 0;flex-shrink:0">
       ${(()=>{ const s=loadUndoStack(); return s.length>0?`<button onclick="undoLast()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-right:auto">↩ 撤銷(${s.length})</button>`:''; })()}
       <button onclick="openLiveModal()" style="background:none;border:none;font-size:15px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;color:${S.liveCode?'var(--green)':'var(--text2)'};padding:4px 6px">📡${S.liveCode?' 直播中':''}</button>
-      <button onclick="openFanshuRef()" style="background:none;border:none;font-size:15px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px;margin-left:4px">📋</button>
       <button onclick="openMaidanModal()" style="background:none;border:none;font-size:15px;color:var(--tab-active);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px">💰 埋單</button>
       <button onclick="openSwapModal()" style="background:none;border:none;font-size:15px;color:var(--orange);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px">⇄ 換人</button>
       <button onclick="S.view='home';render()" style="background:none;border:none;font-size:15px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px">⚙</button>
