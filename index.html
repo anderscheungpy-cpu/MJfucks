@@ -72,7 +72,7 @@
 
   /* ── Tab bar ── */
   .tabbar { display: flex; background: var(--bg); border-top: 1px solid var(--bg2); padding: 8px 0 20px; flex-shrink: 0; }
-  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 8px 0; }
   .tab svg { width: 22px; height: 22px; }
   .tab span { font-size: 11px; color: var(--text3); }
   .tab.active span { color: var(--tab-active); font-weight: 700; }
@@ -165,6 +165,8 @@
   .pick-name { flex: 1; font-size: 15px; font-weight: 500; }
   .pick-chevron { color: var(--text3); }
   .back-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; font-size: 15px; color: var(--orange); font-family: 'Noto Sans TC', sans-serif; cursor: pointer; margin-bottom: 16px; padding: 0; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .btn-sm { font-size: 12px; color: var(--text2); background: none; border: none; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; }
 
   /* ── Profiles page ── */
   .profiles-page { padding: 16px; }
@@ -1002,12 +1004,12 @@ function renderGameTab() {
     </div>
     <div style="display:flex;justify-content:flex-end;align-items:center;padding:8px 0;flex-shrink:0">
       ${(()=>{ const s=loadUndoStack(); return s.length>0?`<button onclick="undoLast()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-right:auto">↩ 撤銷(${s.length})</button>`:''; })()}
-      <button onclick="openLiveModal()" style="background:none;border:none;font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;color:${S.liveCode?'var(--green)':'var(--text2)'}">📡${S.liveCode?' 直播中':''}</button>
-      <button onclick="openFanshuRef()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:8px">📋</button>
-      <button onclick="openMaidanModal()" style="background:none;border:none;font-size:13px;color:var(--tab-active);cursor:pointer;font-family:'Noto Sans TC',sans-serif">💰 埋單</button>
-      <button onclick="openSwapModal()" style="background:none;border:none;font-size:13px;color:var(--orange);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⇄ 換人</button>
-      <button onclick="S.view='home';render()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⚙</button>
-      <button onclick="endGame()" style="background:none;border:none;font-size:13px;color:var(--red);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">結束</button>
+      <button onclick="openLiveModal()" style="background:none;border:none;font-size:15px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;color:${S.liveCode?'var(--green)':'var(--text2)'};padding:4px 6px">📡${S.liveCode?' 直播中':''}</button>
+      <button onclick="openFanshuRef()" style="background:none;border:none;font-size:15px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px;margin-left:4px">📋</button>
+      <button onclick="openMaidanModal()" style="background:none;border:none;font-size:15px;color:var(--tab-active);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px">💰 埋單</button>
+      <button onclick="openSwapModal()" style="background:none;border:none;font-size:15px;color:var(--orange);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px">⇄ 換人</button>
+      <button onclick="S.view='home';render()" style="background:none;border:none;font-size:15px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px">⚙</button>
+      <button onclick="endGame()" style="background:none;border:none;font-size:15px;color:var(--red);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px">結束</button>
     </div>
   </div>`;
 }
@@ -1188,20 +1190,39 @@ function renderWinModal() {
   const fanPickerRows = w.winners.map(wi => {
     const p = g.players[wi];
     const curFan = w.fans[wi] || 1;
+    const selMap = w.selectedRules[wi] || {};
+    const selTotal = Object.entries(selMap).reduce((sum,[id,cnt])=>{
+      const r = S.fanshu.find(x=>x.id===id);
+      return sum + (r?r.fan*cnt:0);
+    }, 0);
+    const selNames = Object.entries(selMap)
+      .filter(([,cnt])=>cnt>0)
+      .map(([id,cnt])=>{
+        const r = S.fanshu.find(x=>x.id===id);
+        return r ? `${r.name}${cnt>1?'×'+cnt:''}(${r.fan*cnt})` : '';
+      }).filter(Boolean);
+    const hasSelection = Object.values(selMap).some(c=>c>0);
+
     return `
     <div style="margin-bottom:12px">
       <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px">${p.emoji} ${esc(p.name)} 番數</div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button ontouchstart="startRepeat(${wi},-1,event)" ontouchend="stopRepeat()" ontouchcancel="stopRepeat()" onmousedown="startRepeat(${wi},-1,event)" onmouseup="stopRepeat()"
+        <button ontouchstart="startRepeat(${wi},-1)" ontouchend="stopRepeat()" onmousedown="startRepeat(${wi},-1)" onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
           style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">−</button>
         <div style="flex:1;position:relative">
-          <input id="fan-input-${wi}" type="number" min="1" max="250" value="${curFan}"
+          <input id="fan-input-${wi}" type="number" min="1" max="999" value="${curFan}"
             oninput="fanTyped(${wi},this.value)"
             style="width:100%;height:52px;text-align:center;font-size:26px;font-weight:900;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);color:var(--orange);font-family:'Noto Sans TC',sans-serif;-moz-appearance:textfield;outline:none;">
         </div>
-        <button ontouchstart="startRepeat(${wi},1,event)" ontouchend="stopRepeat()" ontouchcancel="stopRepeat()" onmousedown="startRepeat(${wi},1,event)" onmouseup="stopRepeat()"
+        <button ontouchstart="startRepeat(${wi},1)" ontouchend="stopRepeat()" onmousedown="startRepeat(${wi},1)" onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
           style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">＋</button>
       </div>
+      <button onclick="openJifanModal(${wi})"
+        style="width:100%;margin-top:6px;padding:8px;border-radius:var(--radius-sm);border:1.5px solid var(--orange);
+        background:${hasSelection?'#fff7ed':'var(--bg)'};color:var(--orange);font-size:13px;font-weight:600;
+        cursor:pointer;font-family:'Noto Sans TC',sans-serif;text-align:left">
+        📋 計番 ${hasSelection?`· ${selNames.slice(0,3).join('、')}${selNames.length>3?'...':''} = ${selTotal}番`:''}
+      </button>
     </div>`;
   }).join('');
 
@@ -1928,7 +1949,7 @@ function renderSpectatorView() {
   document.getElementById('main-content').innerHTML = tabContent;
 
   // Show tab bar for spectator
-  const tb = document.getElementById('tab-bar');
+  const tb = document.getElementById('tabbar');
   if (tb) {
     tb.style.display = 'flex';
     tb.innerHTML = `
