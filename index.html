@@ -773,7 +773,12 @@ function closeAllModals() {
 }
 
 function render() {
-  closeAllModals();
+  // Close any open modals when navigating to a new view
+  const prevView = render._lastView;
+  if (prevView !== S.view) {
+    closeAllModals();
+    render._lastView = S.view;
+  }
   const mc = document.getElementById('main-content');
   const tb = document.getElementById('tabbar');
 
