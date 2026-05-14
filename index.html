@@ -361,30 +361,28 @@ function calcHandPayments(game, winners, discardIdx, fans, isZimo) {
       let dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
       let basePay = base + dealerBonusPay;
 
-      const prevCumDollars = chainCum(chains[pairKey]);
+      const prevCumulative = chainCum(chains[pairKey]);
       const prevPulls = chainPulls(chains[pairKey]);
-      const reverseCumDollars = chainCum(chains[reverseKey]);
+      const reverseCumulative = chainCum(chains[reverseKey]);
 
       let thisPay = basePay;
-      let newCumDollars = basePay * unit;
+      let newCumulative = basePay;
       let newPulls = prevPulls;
 
-      if (reverseCumDollars > 0 && currentWinners.includes(lIdx)) {
-        // 剪 — clawback is in dollars, convert back to 番 for payment
-        const clawbackDollars = Math.floor(reverseCumDollars * 0.5);
-        const clawbackFan = Math.floor(clawbackDollars / unit);
-        thisPay = basePay + clawbackFan;
-        newCumDollars = basePay * unit;
+      if (reverseCumulative > 0 && currentWinners.includes(lIdx)) {
+        // 剪
+        const clawback = Math.floor(reverseCumulative * 0.5);
+        thisPay = basePay + clawback;
+        newCumulative = basePay;
         newPulls = 1;
-        events.push({ type:'剪', winner:wIdx, loser:lIdx, clawback:clawbackFan, clawbackDollars, fan, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumDollars, isZimo });
-      } else if (prevCumDollars > 0) {
-        // 拉 — pullBonus in dollars, convert back to 番
-        const pullBonusDollars = Math.floor(prevCumDollars * 0.5);
-        const pullBonusFan = Math.floor(pullBonusDollars / unit);
-        thisPay = basePay + pullBonusFan;
-        newCumDollars = prevCumDollars + thisPay * unit;
+        events.push({ type:'剪', winner:wIdx, loser:lIdx, clawback, fan, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumulative, isZimo });
+      } else if (prevCumulative > 0) {
+        // 拉
+        const pullBonus = Math.floor(prevCumulative * 0.5);
+        thisPay = basePay + pullBonus;
+        newCumulative = prevCumulative + thisPay;
         newPulls = prevPulls + 1;
-        events.push({ type:'拉', winner:wIdx, loser:lIdx, pullBonus:pullBonusFan, pullBonusDollars, fan, dealerBonusPay, basePay, total:thisPay, cumulative:newCumDollars, pulls:newPulls, isZimo });
+        events.push({ type:'拉', winner:wIdx, loser:lIdx, pullBonus, fan, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, pulls:newPulls, isZimo });
       } else {
         newPulls = 1;
         events.push({ type:'normal', winner:wIdx, loser:lIdx, fan, dealerBonusPay, basePay, total:thisPay, isZimo });
@@ -392,7 +390,7 @@ function calcHandPayments(game, winners, discardIdx, fans, isZimo) {
 
       payments[wIdx] += thisPay;
       payments[lIdx] -= thisPay;
-      newChains[pairKey] = chainObj(newCumDollars, newPulls);
+      newChains[pairKey] = chainObj(newCumulative, newPulls);
     });
   });
 
