@@ -190,15 +190,15 @@
 <div id="root">
   <div id="main-content" style="flex:1;overflow:hidden;display:flex;flex-direction:column;"></div>
   <div class="tabbar" id="tabbar" style="display:none;">
-    <div class="tab active" data-tab="game" onclick="switchTab('game')">
+    <div class="tab active" data-tab="game" onclick="S.view==='spectator'?spectatorSwitchTab('game'):switchTab('game')">
       <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22" style="fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"/></svg>
       <span>現時賽果</span>
     </div>
-    <div class="tab" data-tab="stats" onclick="switchTab('stats')">
+    <div class="tab" data-tab="stats" onclick="S.view==='spectator'?spectatorSwitchTab('stats'):switchTab('stats')">
       <svg viewBox="0 0 24 24"><rect x="18" y="3" width="4" height="18" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="2" y="13" width="4" height="8" rx="1"/></svg>
       <span>統計數據</span>
     </div>
-    <div class="tab" data-tab="log" onclick="switchTab('log')">
+    <div class="tab" data-tab="log" onclick="S.view==='spectator'?spectatorSwitchTab('log'):switchTab('log')">
       <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
       <span>詳細記錄</span>
     </div>
@@ -1666,13 +1666,17 @@ async function fetchSpectatorState(code) {
 
 function renderSpectatorView() {
   const g = S.spectatorGame;
+  const tab = S.spectatorTab || 'game';
+
   if (!g) {
     document.getElementById('main-content').innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px">
         <div style="font-size:32px">📡</div>
         <div style="font-size:16px;font-weight:700">正在連接直播...</div>
-        <div id="spectator-status" style="font-size:13px;color:var(--text2)">代碼: ${S.spectatorCode}</div>
+        <div style="font-size:13px;color:var(--text2)">代碼: ${S.spectatorCode}</div>
+        <button onclick="leaveSpectator()" style="padding:8px 20px;border:none;background:var(--bg2);border-radius:99px;font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 離開</button>
       </div>`;
+    document.getElementById('tabbar').style.display = 'none';
     return;
   }
 
@@ -1680,48 +1684,63 @@ function renderSpectatorView() {
   const windCircle = WINDS[round_wind]+'圈';
   const windLabel = windCircle+WINDS[g.dealer]+'風';
 
-  const card = (idx) => {
-    const p = g.players[idx];
-    const isDealer = idx===g.dealer;
-    const sc = p.score;
-    const relWind = WINDS[(idx - g.dealer + 4) % 4];
-    return `<div class="player-card ${isDealer?'is-dealer':''}" style="cursor:default">
-      ${isDealer?`<div class="dealer-badge">莊</div>`:''}
-      <div class="player-emoji">${p.emoji}</div>
-      <div class="player-name">${esc(p.name)}</div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:3px">${windCircle}${relWind}位</div>
-      <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
-      ${isDealer&&g.dealerStreak>0?`<div style="font-size:10px;color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</div>`:''}
-    </div>`;
-  };
+  // Show tabbar for spectator
+  const tb = document.getElementById('tabbar');
+  tb.style.display = 'flex';
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tab));
 
-  // Latest hand
-  const latest = g.log && g.log[0];
-  const latestDesc = latest ? `<div style="font-size:13px;color:var(--text2);text-align:center;padding:8px 0">${esc(latest.desc||latest.type)}</div>` : '';
+  if (tab === 'game') {
+    const card = (idx) => {
+      const p = g.players[idx];
+      const isDealer = idx===g.dealer;
+      const sc = p.score;
+      const relWind = WINDS[(idx - g.dealer + 4) % 4];
+      return `<div class="player-card ${isDealer?'is-dealer':''}" style="cursor:default">
+        ${isDealer?`<div class="dealer-badge">莊</div>`:''}
+        <div class="player-emoji">${p.emoji}</div>
+        <div class="player-name">${esc(p.name)}</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:3px">${windCircle}${relWind}位</div>
+        <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
+        ${isDealer&&g.dealerStreak>0?`<div style="font-size:10px;color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</div>`:''}
+      </div>`;
+    };
+    const latest = g.log && g.log[0];
+    document.getElementById('main-content').innerHTML = `
+      <div class="game-page">
+        <div class="round-info">
+          <div class="round-badge">
+            <span>👁</span><span class="arrow">›</span>
+            <span>${windLabel}</span><span class="arrow">›</span>
+            <span style="color:var(--text2)">第${g.round}局</span>
+            <span style="font-size:11px;color:var(--green)">● 直播</span>
+          </div>
+        </div>
+        <div class="cross-outer">
+          <div class="cross-card-wrap" style="grid-column:2;grid-row:1">${card(2)}</div>
+          <div class="cross-card-wrap-side" style="grid-column:1;grid-row:2">${card(3)}</div>
+          <div class="cross-center-col" style="grid-column:2;grid-row:2;align-self:center">
+            <div class="center-wind">${windLabel}</div>
+          </div>
+          <div class="cross-card-wrap-side" style="grid-column:3;grid-row:2">${card(1)}</div>
+          <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
+        </div>
+        ${latest?`<div style="font-size:13px;color:var(--text2);text-align:center;padding:6px 0">${esc(latest.desc||latest.type)}</div>`:''}
+        <div style="text-align:center;font-size:11px;color:var(--text3)">每3秒更新 · 代碼 ${S.spectatorCode}</div>
+      </div>`;
+  } else if (tab === 'stats') {
+    const savedGame = S.game; S.game = g;
+    document.getElementById('main-content').innerHTML = `<div style="overflow-y:auto;height:100%">${renderStatsTab()}</div>`;
+    S.game = savedGame;
+  } else if (tab === 'log') {
+    const savedGame = S.game; S.game = g;
+    document.getElementById('main-content').innerHTML = `<div style="overflow-y:auto;height:100%">${renderLogTab()}</div>`;
+    S.game = savedGame;
+  }
+}
 
-  document.getElementById('main-content').innerHTML = `
-    <div class="game-page">
-      <div class="round-info">
-        <div class="round-badge">
-          <span>👁 觀看</span><span class="arrow">›</span>
-          <span>${windLabel}</span><span class="arrow">›</span>
-          <span style="color:var(--text2)">第${g.round}局</span>
-          <span style="font-size:11px;color:var(--green)">● 直播</span>
-        </div>
-      </div>
-      <div class="cross-outer">
-        <div class="cross-card-wrap" style="grid-column:2;grid-row:1">${card(2)}</div>
-        <div class="cross-card-wrap-side" style="grid-column:1;grid-row:2">${card(3)}</div>
-        <div class="cross-center-col" style="grid-column:2;grid-row:2;align-self:center">
-          <div class="center-wind">${windLabel}</div>
-        </div>
-        <div class="cross-card-wrap-side" style="grid-column:3;grid-row:2">${card(1)}</div>
-        <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
-      </div>
-      ${latestDesc}
-      <div style="text-align:center;font-size:11px;color:var(--text3);padding-bottom:4px">每3秒更新 · 代碼 ${S.spectatorCode}</div>
-      <button onclick="leaveSpectator()" style="width:100%;padding:8px;border:none;background:none;color:var(--text3);font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 離開</button>
-    </div>`;
+function spectatorSwitchTab(t) {
+  S.spectatorTab = t;
+  renderSpectatorView();
 }
 
 // ── Surrender (投降) ──────────────────────────────────────────────────────────
