@@ -35,15 +35,9 @@
   html, body { height: 100%; background: var(--bg); font-family: 'Noto Sans TC', sans-serif; color: var(--text); overflow: hidden; }
   #root { display: flex; flex-direction: column; height: 100%; max-width: 430px; margin: 0 auto; position: relative; }
 
-    .player-emoji { font-size: 24px; margin-bottom: 2px; }
-    .player-score { font-size: 22px; }
-    .round-info { margin-bottom: 4px; }
-    .cross-outer { gap: 6px; }
-  }
-
   /* ── Tab bar ── */
   .tabbar { display: flex; background: var(--bg); border-top: 1px solid var(--bg2); padding: 8px 0 20px; flex-shrink: 0; }
-  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 8px 0; }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; }
   .tab svg { width: 22px; height: 22px; }
   .tab span { font-size: 11px; color: var(--text3); }
   .tab.active span { color: var(--tab-active); font-weight: 700; }
@@ -136,8 +130,6 @@
   .pick-name { flex: 1; font-size: 15px; font-weight: 500; }
   .pick-chevron { color: var(--text3); }
   .back-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; font-size: 15px; color: var(--orange); font-family: 'Noto Sans TC', sans-serif; cursor: pointer; margin-bottom: 16px; padding: 0; }
-  .row { display: flex; align-items: center; gap: 8px; }
-  .btn-sm { font-size: 12px; color: var(--text2); background: none; border: none; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; }
 
   /* ── Profiles page ── */
   .profiles-page { padding: 16px; }
@@ -269,154 +261,12 @@
   </div>
 </div>
 
-<!-- 計番 modal -->
-<div class="modal-overlay" id="jifanModal">
-  <div class="modal-sheet" style="max-height:94vh;overflow-y:auto">
-    <div id="jifanContent"></div>
-  </div>
-</div>
-
 <script>
 const WINDS = ['東','南','西','北'];
 const EMOJIS = ['🐭','🐮','🐯','🐰','🐲','🐍','🐴','🐏','🐵','🐔','🐶','🐷','😺','🦊','🐻','🐼','🐨','🦁'];
 const PROFILES_KEY = 'mj_profiles_v2';
 const GAME_KEY = 'mj_game_v5';
 const DAILY_KEY = 'mj_daily_v1';
-
-// ── Full 開檯啦2.0 番數表 ──────────────────────────────────────────────────────
-const FANSHU_DEFAULT = [
-  { cat:'獨立類', id:'wuhua',      name:'無花',        fan:1,  desc:'沒有花牌' },
-  { cat:'獨立類', id:'zhenghua',   name:'正花',        fan:2,  desc:'自己坐位的花' },
-  { cat:'獨立類', id:'lanhua',     name:'爛花',        fan:1,  desc:'不是自己坐位的花' },
-  { cat:'獨立類', id:'yitaihua',   name:'一台花',      fan:10, desc:'同一類四隻花' },
-  { cat:'獨立類', id:'tingpai',    name:'聽牌',        fan:5,  desc:'聲明叫胡，不得轉章' },
-  { cat:'獨立類', id:'menqingting',name:'門清聽牌',    fan:10, desc:'門清狀況下聽牌' },
-  { cat:'獨立類', id:'yifa',       name:'一發',        fan:5,  desc:'聽牌後下次摸牌前胡牌' },
-  { cat:'獨立類', id:'jihu',       name:'雞胡',        fan:20, desc:'胡出時只得一番' },
-  { cat:'獨立類', id:'duipeng',    name:'對碰',        fan:1,  desc:'食糊時叫對碰' },
-  { cat:'獨立類', id:'dandu',      name:'獨獨',        fan:2,  desc:'單釣或叫偏章卡窿' },
-  { cat:'獨立類', id:'jiadu',      name:'假獨',        fan:1,  desc:'可以砌到叫單釣或叫偏章' },
-  { cat:'獨立類', id:'pinghu',     name:'平胡',        fan:3,  desc:'四組順子加一對眼' },
-  { cat:'獨立類', id:'jiangyan',   name:'將眼',        fan:1,  desc:'以一對二、五或八做眼' },
-  { cat:'獨立類', id:'wuzi',       name:'無字',        fan:1,  desc:'沒有番子' },
-  { cat:'獨立類', id:'wuzihua',    name:'無字花',      fan:5,  desc:'沒有番子及沒有花' },
-  { cat:'獨立類', id:'dawuzihua',  name:'無字花平胡',  fan:10, desc:'沒有番子，沒有花，又是平胡' },
-  { cat:'獨立類', id:'menqing',    name:'門清',        fan:3,  desc:'門前清，暗槓亦可' },
-  { cat:'獨立類', id:'zimo',       name:'自摸',        fan:1,  desc:'自己摸牌胡' },
-  { cat:'獨立類', id:'menqingzimo',name:'門清自摸',    fan:5,  desc:'門清狀態下自摸' },
-  { cat:'獨立類', id:'haidi',      name:'海底撈月',    fan:20, desc:'摸最後一隻牌胡' },
-  { cat:'獨立類', id:'hedi',       name:'河底撈魚',    fan:20, desc:'最後一隻出銃胡' },
-  { cat:'獨立類', id:'huashang',   name:'花上食胡',    fan:1,  desc:'補花後食胡', defaultOff:true },
-  { cat:'獨立類', id:'gangshang',  name:'槓上食胡',    fan:1,  desc:'開槓後食胡' },
-  { cat:'獨立類', id:'qianggang',  name:'搶槓食胡',    fan:1,  desc:'搶槓不當自摸，只當出銃加一番' },
-  { cat:'獨立類', id:'ganggang',   name:'槓上槓食胡',  fan:30, desc:'槓後再槓食胡' },
-  { cat:'獨立類', id:'qianggangg', name:'搶槓上槓食胡',fan:30, desc:'搶槓上槓食胡' },
-  { cat:'獨立類', id:'quanqiuren', name:'全求人',      fan:15, desc:'全副落地，單釣他家打出胡' },
-  { cat:'獨立類', id:'banqiuren',  name:'半求人',      fan:8,  desc:'全副落地，單釣自摸' },
-  { cat:'獨立類', id:'qi7',        name:'七只內',      fan:20, desc:'地下七隻牌內食胡' },
-  { cat:'獨立類', id:'shi10',      name:'十只內',      fan:10, desc:'地下十隻牌內食胡' },
-  { cat:'獨立類', id:'si4',        name:'四只內',      fan:40, desc:'地下四隻牌內食胡' },
-  { cat:'獨立類', id:'tianhu',     name:'天胡',        fan:100,desc:'莊家一開牌即食胡' },
-  { cat:'獨立類', id:'dihu',       name:'地胡',        fan:90, desc:'莊家打出第一隻牌出銃' },
-  { cat:'獨立類', id:'renhu',      name:'人胡',        fan:80, desc:'莊家打牌後第一巡胡牌' },
-  { cat:'獨立類', id:'tiantin',    name:'天聽',        fan:40, desc:'閒家配牌補花後即聽牌' },
-  { cat:'獨立類', id:'ditin',      name:'地聽',        fan:30, desc:'各家打第一張牌後宣告聽牌' },
-  { cat:'獨立類', id:'shuangxiang',name:'雙響',        fan:5,  desc:'抵死' },
-  { cat:'獨立類', id:'sanxiang',   name:'三響',        fan:10, desc:'抵撚死' },
-
-  { cat:'字牌類', id:'fengpai',    name:'碰出風牌(正)',  fan:2,  desc:'碰出正風或正圈' },
-  { cat:'字牌類', id:'fengpai2',   name:'碰出風牌(非正)',fan:1,  desc:'碰出非正風或正圈' },
-  { cat:'字牌類', id:'sanyuan',    name:'碰出三元牌',    fan:2,  desc:'碰出中/發/白' },
-  { cat:'字牌類', id:'xiaosanyuan',name:'小三元',        fan:20, desc:'兩刻三元牌加一對三元眼' },
-  { cat:'字牌類', id:'dasanyuan',  name:'大三元',        fan:40, desc:'三刻三元牌' },
-  { cat:'字牌類', id:'xiaosanfeng',name:'小三風',        fan:15, desc:'二刻風牌加一對風牌眼' },
-  { cat:'字牌類', id:'dasanfeng',  name:'大三風',        fan:30, desc:'三刻風牌' },
-  { cat:'字牌類', id:'xiaosixyi',  name:'小四喜',        fan:60, desc:'三刻一對四風' },
-  { cat:'字牌類', id:'dasixyi',    name:'大四喜',        fan:80, desc:'四刻四風' },
-  { cat:'字牌類', id:'ziyise',     name:'字一色',        fan:100,desc:'全由字牌組成' },
-
-  { cat:'刻槓類', id:'duidui',     name:'對對糊',    fan:30, desc:'全刻子胡牌' },
-  { cat:'刻槓類', id:'eran2',      name:'二暗刻',    fan:3,  desc:'手牌有二個暗刻/暗槓' },
-  { cat:'刻槓類', id:'eran3',      name:'三暗刻',    fan:10, desc:'手牌有三個暗刻/暗槓' },
-  { cat:'刻槓類', id:'eran4',      name:'四暗刻',    fan:30, desc:'手牌有四個暗刻/暗槓' },
-  { cat:'刻槓類', id:'eran5',      name:'五暗刻',    fan:80, desc:'手裡五個刻子' },
-  { cat:'刻槓類', id:'jianjian',   name:'間間胡',    fan:100,desc:'不能槓，必須自摸' },
-  { cat:'刻槓類', id:'gang',       name:'槓',        fan:1,  desc:'手牌有一個槓' },
-  { cat:'刻槓類', id:'angang',     name:'暗槓',      fan:2,  desc:'手牌有一個暗槓' },
-  { cat:'刻槓類', id:'ererdi',     name:'二兄弟',    fan:3,  desc:'兩款數字一樣的刻子' },
-  { cat:'刻槓類', id:'xiaosandi',  name:'小三兄弟',  fan:10, desc:'二兄弟再加一對兄弟眼' },
-  { cat:'刻槓類', id:'dasandi',    name:'大三兄弟',  fan:20, desc:'三款數字一樣的刻子' },
-  { cat:'刻槓類', id:'erjimei',    name:'二姊妹',    fan:2,  desc:'兩副同款數字相連的刻子' },
-  { cat:'刻槓類', id:'xiaosanjm',  name:'小三姊妹',  fan:8,  desc:'兩副同款相連刻加一對相連眼' },
-  { cat:'刻槓類', id:'sanjimei',   name:'三姊妹',    fan:15, desc:'三副同款數字相連的刻子' },
-  { cat:'刻槓類', id:'xiaosijm',   name:'小四姊妹',  fan:20, desc:'三副同款相連刻加一對相連眼' },
-  { cat:'刻槓類', id:'sijimei',    name:'四姊妹',    fan:40, desc:'四副同款數字相連的刻子' },
-  { cat:'刻槓類', id:'xiaowujm',   name:'小五姊妹',  fan:60, desc:'四副同款相連刻加一對相連眼' },
-  { cat:'刻槓類', id:'wujimei',    name:'五姊妹',    fan:80, desc:'五副同款數字相連的刻子' },
-  { cat:'刻槓類', id:'xiaoliujm', name:'小六姊妹',  fan:100,desc:'五副同款相連刻加一對相連眼（外加清一色）' },
-
-  { cat:'般高相逢類', id:'yibangao',  name:'一般高',  fan:3,  desc:'二個完全相同的順子' },
-  { cat:'般高相逢類', id:'liangbg',   name:'兩般高',  fan:10, desc:'兩個一般高（大七對）' },
-  { cat:'般高相逢類', id:'sanbangao', name:'三般高',  fan:20, desc:'三個完全相同的順子' },
-  { cat:'般高相逢類', id:'sibangao',  name:'四般高',  fan:60, desc:'四個完全相同的順子' },
-  { cat:'般高相逢類', id:'erxf',      name:'二相逢',  fan:2,  desc:'二個款式不同但數字一樣的順子' },
-  { cat:'般高相逢類', id:'sanxf',     name:'三相逢',  fan:10, desc:'三個款式不同但數字一樣的順子' },
-  { cat:'般高相逢類', id:'sitongshun',name:'四同順',  fan:20, desc:'四個數字一樣順子不論款式' },
-  { cat:'般高相逢類', id:'witongshun',name:'五同順',  fan:40, desc:'五個數字一樣順子不論款式' },
-  { cat:'般高相逢類', id:'sansanbg',  name:'三色三步高',fan:5, desc:'三門數字牌三組遞增一位順子' },
-  { cat:'般高相逢類', id:'yisansanbg',name:'一色三步高',fan:10,desc:'同一門三副遞增一位順子' },
-  { cat:'般高相逢類', id:'yisibg',    name:'一色四步高',fan:20,desc:'一門四副依次遞增一位順子' },
-  { cat:'般高相逢類', id:'yiwubg',    name:'一色五步高',fan:40,desc:'一門五副依次遞增一位順子' },
-
-  { cat:'么九類', id:'laoshao',    name:'老少',    fan:3,  desc:'同門一二三加七八九' },
-  { cat:'么九類', id:'duanme',     name:'斷么',    fan:5,  desc:'全副牌沒有么九及番子' },
-  { cat:'么九類', id:'huntaidai',  name:'混全帶么', fan:20, desc:'每組面子及眼均帶么九或字牌' },
-  { cat:'么九類', id:'chuntaidai', name:'純全帶么', fan:30, desc:'每組面子及眼均帶么九數牌' },
-  { cat:'么九類', id:'hunmejiu',   name:'混么九',   fan:40, desc:'全由么九加字牌組成對對或七對' },
-  { cat:'么九類', id:'qingmejiu',  name:'清么九',   fan:80, desc:'全由么九數牌組成' },
-
-  { cat:'四歸類', id:'sigui1',    name:'四歸一',  fan:5,  desc:'用盡同一隻牌的四隻' },
-  { cat:'四歸類', id:'sigui2',    name:'四歸二',  fan:10, desc:'用盡同一隻牌四隻，兩隻做眼' },
-  { cat:'四歸類', id:'sigui4',    name:'四歸四',  fan:20, desc:'用盡同一隻牌四隻（順子）' },
-
-  { cat:'一氣通貫類', id:'mingqinglong', name:'明清龍',  fan:10, desc:'同款一至九，有些是上的' },
-  { cat:'一氣通貫類', id:'mingzalong',   name:'明雜龍',  fan:8,  desc:'三款一至九，有些是上的' },
-  { cat:'一氣通貫類', id:'anqinglong',   name:'暗清龍',  fan:20, desc:'同款一至九，全在手裡' },
-  { cat:'一氣通貫類', id:'anzalong',     name:'暗雜龍',  fan:15, desc:'三款一至九，全在手裡' },
-
-  { cat:'同門類', id:'wumenqi',   name:'五門齊',  fan:10, desc:'全副牌五門都有' },
-  { cat:'同門類', id:'qimenqi',   name:'七門齊',  fan:15, desc:'全副牌七門都有（含花）' },
-  { cat:'同門類', id:'queyimen',  name:'缺一門',  fan:5,  desc:'不計番子缺筒索萬一門' },
-  { cat:'同門類', id:'hunyise',   name:'混一色',  fan:30, desc:'一門數牌加字牌' },
-  { cat:'同門類', id:'qingyise',  name:'清一色',  fan:80, desc:'全由一門數牌組成' },
-
-  { cat:'特殊類', id:'shisanme',  name:'十三么',     fan:100,desc:'十三么，三隻自摸順子或暗刻' },
-  { cat:'特殊類', id:'shiliu',    name:'十六不搭',   fan:40, desc:'東南西北中發白加三門各三隻' },
-  { cat:'特殊類', id:'liku',      name:'嚦咕嚦咕',   fan:40, desc:'八對子，三隻一樣的不能碰出' },
-  { cat:'特殊類', id:'likufly',   name:'嚦咕嚦咕八飛',fan:50,desc:'嚦咕嚦咕加八飛' },
-  { cat:'特殊類', id:'lianghua',  name:'兩台花(花胡)',fan:30, desc:'二台花可立刻食胡' },
-  { cat:'特殊類', id:'qiqiang',   name:'七搶一',     fan:20, desc:'摸第八隻花搶一隻花即食' },
-  { cat:'特殊類', id:'yiqiang',   name:'一搶七',     fan:20, desc:'摸第八隻花搶七隻花即食' },
-  { cat:'特殊類', id:'quewu',     name:'缺五',       fan:5,  desc:'缺少五番牌' },
-];
-
-const FANSHU_CATS = [...new Set(FANSHU_DEFAULT.map(r=>r.cat))];
-
-function loadFanshu() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(FANSHU_KEY));
-    if (!saved) return FANSHU_DEFAULT.map(r=>({...r, enabled:true}));
-    // Merge saved settings with defaults (in case new rules added)
-    return FANSHU_DEFAULT.map(r => {
-      const s = saved.find(x=>x.id===r.id);
-      return s ? {...r, fan:s.fan, enabled:s.enabled} : {...r, enabled: r.defaultOff ? false : true};
-    });
-  } catch { return FANSHU_DEFAULT.map(r=>({...r, enabled: r.defaultOff ? false : true})); }
-}
-function saveFanshu(rules) { localStorage.setItem(FANSHU_KEY, JSON.stringify(rules)); }
-
-function loadProfiles() { try { return JSON.parse(localStorage.getItem(PROFILES_KEY)) || []; } catch { return []; } }
-function saveProfiles(p) { localStorage.setItem(PROFILES_KEY, JSON.stringify(p)); }
 
 // ── Supabase config ───────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://wzqsbsakzhomvhilndxd.supabase.co';
@@ -428,20 +278,6 @@ const LIVE_URL = 'https://xhhkzibgkrkvvrhwgcqq.supabase.co';
 const LIVE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoaGt6aWJna3JrdnZyaHdnY3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2OTM0OTYsImV4cCI6MjA5MzI2OTQ5Nn0.KAvF10uK1s0HarhQsa2zig33L8BJ2avffFK1BLgyKc4';
 const LIVE_SESSION_KEY = 'mj_live_session';
 let _liveChannel = null;
-
-function liveHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'apikey': LIVE_KEY,
-    'Authorization': `Bearer ${LIVE_KEY}`,
-    'Prefer': 'return=representation',
-  };
-}
-function liveUrl(path) {
-  // Include apikey as query param to avoid CORS preflight issues
-  const sep = path.includes('?') ? '&' : '?';
-  return `${LIVE_URL}/rest/v1/${path}${sep}apikey=${LIVE_KEY}`;
-}
 function loadDaily() { try { return JSON.parse(localStorage.getItem(DAILY_KEY)) || { date: today(), totals:{} }; } catch { return { date: today(), totals:{} }; } }
 function saveDaily(d) { localStorage.setItem(DAILY_KEY, JSON.stringify(d)); }
 function clearDaily() { localStorage.removeItem(DAILY_KEY); }
@@ -490,11 +326,9 @@ let S = {
   setupUnitHu: 2,
   setupUnitZimo: 1,
   pickingFor: null,
-  winInput: { type:'hu', winners:[], discard:null, fans:{}, selectedRules:{} },
+  winInput: { type:'hu', winners:[], discard:null, fans:{} },
   penaltyInput: { payer:null, receiver:'all', di:1, dir:'pay' },
   swapInput: { seatIdx:null, newPlayer:null },
-  fanshu: loadFanshu(),
-  fanshuCat: (typeof FANSHU_CATS !== 'undefined' ? FANSHU_CATS[0] : '獨立類'),
   liveCode: localStorage.getItem(LIVE_SESSION_KEY) || null,
   editEmoji: '🐶',
 };
@@ -738,12 +572,6 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 function scoreClass(n) { return n>0?'pos':n<0?'neg':'zero'; }
 function fmt(n) { return (n>=0?'+':'')+n; }
 
-function closeAllModals() {
-  document.querySelectorAll('.modal-overlay').forEach(m => {
-    m.classList.remove('open');
-  });
-}
-
 function render() {
   const mc = document.getElementById('main-content');
   const tb = document.getElementById('tabbar');
@@ -984,11 +812,11 @@ function renderGameTab() {
     </div>
     <div style="display:flex;justify-content:flex-end;align-items:center;padding:8px 0;flex-shrink:0">
       ${(()=>{ const s=loadUndoStack(); return s.length>0?`<button onclick="undoLast()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-right:auto">↩ 撤銷(${s.length})</button>`:''; })()}
-      <button onclick="openLiveModal()" style="background:none;border:none;font-size:15px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;color:${S.liveCode?'var(--green)':'var(--text2)'};padding:4px 6px">📡${S.liveCode?' 直播中':''}</button>
-      <button onclick="openMaidanModal()" style="background:none;border:none;font-size:15px;color:var(--tab-active);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px">💰 埋單</button>
-      <button onclick="openSwapModal()" style="background:none;border:none;font-size:15px;color:var(--orange);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px">⇄ 換人</button>
-      <button onclick="S.view='home';render()" style="background:none;border:none;font-size:15px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px">⚙</button>
-      <button onclick="endGame()" style="background:none;border:none;font-size:15px;color:var(--red);cursor:pointer;font-family:'Noto Sans TC',sans-serif;padding:4px 6px">結束</button>
+      <button onclick="openLiveModal()" style="background:none;border:none;font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;color:${S.liveCode?'var(--green)':'var(--text2)'}">📡${S.liveCode?' 直播中':''}</button>
+      <button onclick="openMaidanModal()" style="background:none;border:none;font-size:13px;color:var(--tab-active);cursor:pointer;font-family:'Noto Sans TC',sans-serif">💰 埋單</button>
+      <button onclick="openSwapModal()" style="background:none;border:none;font-size:13px;color:var(--orange);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⇄ 換人</button>
+      <button onclick="S.view='home';render()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⚙</button>
+      <button onclick="endGame()" style="background:none;border:none;font-size:13px;color:var(--red);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">結束</button>
     </div>
   </div>`;
 }
@@ -1169,39 +997,20 @@ function renderWinModal() {
   const fanPickerRows = w.winners.map(wi => {
     const p = g.players[wi];
     const curFan = w.fans[wi] || 1;
-    const selMap = w.selectedRules[wi] || {};
-    const selTotal = Object.entries(selMap).reduce((sum,[id,cnt])=>{
-      const r = S.fanshu.find(x=>x.id===id);
-      return sum + (r?r.fan*cnt:0);
-    }, 0);
-    const selNames = Object.entries(selMap)
-      .filter(([,cnt])=>cnt>0)
-      .map(([id,cnt])=>{
-        const r = S.fanshu.find(x=>x.id===id);
-        return r ? `${r.name}${cnt>1?'×'+cnt:''}(${r.fan*cnt})` : '';
-      }).filter(Boolean);
-    const hasSelection = Object.values(selMap).some(c=>c>0);
-
     return `
     <div style="margin-bottom:12px">
       <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px">${p.emoji} ${esc(p.name)} 番數</div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button ontouchstart="startRepeat(${wi},-1)" ontouchend="stopRepeat()" onmousedown="startRepeat(${wi},-1)" onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+        <button ontouchstart="startRepeat(${wi},-1,event)" ontouchend="stopRepeat()" ontouchcancel="stopRepeat()" onmousedown="startRepeat(${wi},-1,event)" onmouseup="stopRepeat()"
           style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">−</button>
         <div style="flex:1;position:relative">
-          <input id="fan-input-${wi}" type="number" min="1" max="999" value="${curFan}"
+          <input id="fan-input-${wi}" type="number" min="1" max="250" value="${curFan}"
             oninput="fanTyped(${wi},this.value)"
             style="width:100%;height:52px;text-align:center;font-size:26px;font-weight:900;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);color:var(--orange);font-family:'Noto Sans TC',sans-serif;-moz-appearance:textfield;outline:none;">
         </div>
-        <button ontouchstart="startRepeat(${wi},1)" ontouchend="stopRepeat()" onmousedown="startRepeat(${wi},1)" onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
+        <button ontouchstart="startRepeat(${wi},1,event)" ontouchend="stopRepeat()" ontouchcancel="stopRepeat()" onmousedown="startRepeat(${wi},1,event)" onmouseup="stopRepeat()"
           style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">＋</button>
       </div>
-      <button onclick="openJifanModal(${wi})"
-        style="width:100%;margin-top:6px;padding:8px;border-radius:var(--radius-sm);border:1.5px solid var(--orange);
-        background:${hasSelection?'#fff7ed':'var(--bg)'};color:var(--orange);font-size:13px;font-weight:600;
-        cursor:pointer;font-family:'Noto Sans TC',sans-serif;text-align:left">
-        📋 計番 ${hasSelection?`· ${selNames.slice(0,3).join('、')}${selNames.length>3?'...':''} = ${selTotal}番`:''}
-      </button>
     </div>`;
   }).join('');
 
@@ -1751,29 +1560,31 @@ function copyLiveLink(url) {
 async function startLive() {
   renderLiveModal('loading');
   try {
+    // Generate a 4-digit code
     const code = String(Math.floor(1000 + Math.random() * 9000));
-    const res = await fetch(liveUrl('live_sessions'), {
+    const headers = {
+      'Content-Type': 'application/json',
+      'apikey': LIVE_KEY,
+      'Authorization': `Bearer ${LIVE_KEY}`,
+      'Prefer': 'return=representation',
+    };
+    // Create session row
+    const res = await fetch(`${LIVE_URL}/rest/v1/live_sessions`, {
       method: 'POST',
-      headers: liveHeaders(),
+      headers,
       body: JSON.stringify({
         session_code: code,
         game_state: JSON.stringify(S.game),
         updated_at: new Date().toISOString(),
       }),
     });
-    if (!res.ok) {
-      const errText = await res.text().catch(()=>'');
-      throw new Error(`建立失敗 (${res.status}) ${errText.slice(0,100)}`);
-    }
+    if (!res.ok) throw new Error(`建立失敗 (${res.status})`);
     S.liveCode = code;
     localStorage.setItem(LIVE_SESSION_KEY, code);
     renderLiveModal('idle');
-    renderTab();
+    renderTab(); // update 直播中 indicator
   } catch(e) {
-    const msg = e.message.includes('Failed to fetch') || e.message.includes('Load failed')
-      ? '網絡錯誤 — 請檢查網絡連接或 Supabase 設定'
-      : e.message;
-    renderLiveModal('error', msg);
+    renderLiveModal('error', e.message);
   }
 }
 
@@ -1784,8 +1595,8 @@ async function stopLive() {
     'Authorization': `Bearer ${LIVE_KEY}`,
   };
   // Delete session
-  await fetch(liveUrl(`live_sessions?session_code=eq.${S.liveCode}`), {
-    method: 'DELETE', headers: liveHeaders(),
+  await fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${S.liveCode}`, {
+    method: 'DELETE', headers,
   }).catch(()=>{});
   S.liveCode = null;
   localStorage.removeItem(LIVE_SESSION_KEY);
@@ -1795,9 +1606,14 @@ async function stopLive() {
 
 async function pushLiveState() {
   if (!S.liveCode || !S.game) return;
-  fetch(liveUrl(`live_sessions?session_code=eq.${S.liveCode}`), {
+  const headers = {
+    'Content-Type': 'application/json',
+    'apikey': LIVE_KEY,
+    'Authorization': `Bearer ${LIVE_KEY}`,
+  };
+  fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${S.liveCode}`, {
     method: 'PATCH',
-    headers: liveHeaders(),
+    headers,
     body: JSON.stringify({
       game_state: JSON.stringify(S.game),
       updated_at: new Date().toISOString(),
@@ -1834,7 +1650,8 @@ async function subscribeSpectator(code) {
 
 async function fetchSpectatorState(code) {
   try {
-    const res = await fetch(liveUrl(`live_sessions?session_code=eq.${code}&select=game_state,updated_at`), { headers: liveHeaders() });
+    const headers = { 'apikey': LIVE_KEY, 'Authorization': `Bearer ${LIVE_KEY}` };
+    const res = await fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${code}&select=game_state,updated_at`, { headers });
     if (!res.ok) return;
     const rows = await res.json();
     if (!rows.length) {
@@ -1849,15 +1666,12 @@ async function fetchSpectatorState(code) {
 
 function renderSpectatorView() {
   const g = S.spectatorGame;
-  const tab = S.spectatorTab || 'game';
-
   if (!g) {
     document.getElementById('main-content').innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px">
         <div style="font-size:32px">📡</div>
         <div style="font-size:16px;font-weight:700">正在連接直播...</div>
         <div id="spectator-status" style="font-size:13px;color:var(--text2)">代碼: ${S.spectatorCode}</div>
-        <button onclick="leaveSpectator()" style="padding:8px 20px;border:none;background:var(--bg2);border-radius:99px;font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 離開</button>
       </div>`;
     return;
   }
@@ -1866,28 +1680,30 @@ function renderSpectatorView() {
   const windCircle = WINDS[round_wind]+'圈';
   const windLabel = windCircle+WINDS[g.dealer]+'風';
 
-  // Build tab content
-  let tabContent = '';
-  if (tab === 'game') {
-    const card = (idx) => {
-      const p = g.players[idx];
-      const isDealer = idx===g.dealer;
-      const sc = p.score;
-      const relWind = WINDS[(idx - g.dealer + 4) % 4];
-      return `<div class="player-card ${isDealer?'is-dealer':''}" style="cursor:default">
-        ${isDealer?`<div class="dealer-badge">莊</div>`:''}
-        <div class="player-emoji">${p.emoji}</div>
-        <div class="player-name">${esc(p.name)}</div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:3px">${windCircle}${relWind}位</div>
-        <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
-        ${isDealer&&g.dealerStreak>0?`<div style="font-size:10px;color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</div>`:''}
-      </div>`;
-    };
-    const latest = g.log && g.log[0];
-    tabContent = `<div class="game-page">
+  const card = (idx) => {
+    const p = g.players[idx];
+    const isDealer = idx===g.dealer;
+    const sc = p.score;
+    const relWind = WINDS[(idx - g.dealer + 4) % 4];
+    return `<div class="player-card ${isDealer?'is-dealer':''}" style="cursor:default">
+      ${isDealer?`<div class="dealer-badge">莊</div>`:''}
+      <div class="player-emoji">${p.emoji}</div>
+      <div class="player-name">${esc(p.name)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:3px">${windCircle}${relWind}位</div>
+      <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
+      ${isDealer&&g.dealerStreak>0?`<div style="font-size:10px;color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</div>`:''}
+    </div>`;
+  };
+
+  // Latest hand
+  const latest = g.log && g.log[0];
+  const latestDesc = latest ? `<div style="font-size:13px;color:var(--text2);text-align:center;padding:8px 0">${esc(latest.desc||latest.type)}</div>` : '';
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="game-page">
       <div class="round-info">
         <div class="round-badge">
-          <span>👁</span><span class="arrow">›</span>
+          <span>👁 觀看</span><span class="arrow">›</span>
           <span>${windLabel}</span><span class="arrow">›</span>
           <span style="color:var(--text2)">第${g.round}局</span>
           <span style="font-size:11px;color:var(--green)">● 直播</span>
@@ -1902,326 +1718,10 @@ function renderSpectatorView() {
         <div class="cross-card-wrap-side" style="grid-column:3;grid-row:2">${card(1)}</div>
         <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
       </div>
-      ${latest?`<div style="font-size:13px;color:var(--text2);text-align:center;padding:6px 0">${esc(latest.desc||latest.type)}</div>`:''}
+      ${latestDesc}
+      <div style="text-align:center;font-size:11px;color:var(--text3);padding-bottom:4px">每3秒更新 · 代碼 ${S.spectatorCode}</div>
+      <button onclick="leaveSpectator()" style="width:100%;padding:8px;border:none;background:none;color:var(--text3);font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 離開</button>
     </div>`;
-  } else if (tab === 'stats') {
-    // Reuse renderStatsTab logic with spectator game
-    const savedGame = S.game;
-    S.game = g;
-    tabContent = `<div style="overflow-y:auto;height:100%">${renderStatsTab()}</div>`;
-    S.game = savedGame;
-  } else if (tab === 'log') {
-    const savedGame = S.game;
-    S.game = g;
-    tabContent = `<div style="overflow-y:auto;height:100%">${renderLogTab()}</div>`;
-    S.game = savedGame;
-  }
-
-  document.getElementById('main-content').innerHTML = tabContent;
-
-  // Show tab bar for spectator
-  const tb = document.getElementById('tabbar');
-  if (tb) {
-    tb.style.display = 'flex';
-    tb.innerHTML = `
-      <button class="tab ${tab==='game'?'active':''}" onclick="S.spectatorTab='game';renderSpectatorView()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-        現時賽果
-      </button>
-      <button class="tab ${tab==='stats'?'active':''}" onclick="S.spectatorTab='stats';renderSpectatorView()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/></svg>
-        統計數據
-      </button>
-      <button class="tab ${tab==='log'?'active':''}" onclick="S.spectatorTab='log';renderSpectatorView()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-        詳細記錄
-      </button>
-      <button onclick="leaveSpectator()" style="flex:0;padding:0 12px;font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;font-family:'Noto Sans TC',sans-serif">離開</button>
-    `;
-  }
-}
-
-// ── 計番 exclusions ───────────────────────────────────────────────────────────
-const JIFAN_EXCLUSIONS = {
-  // Flower
-  'wuhua':      ['zhenghua','lanhua','yitaihua','wuzihua','dawuzihua'],
-  'zhenghua':   ['wuhua','wuzihua','dawuzihua'],
-  'lanhua':     ['wuhua','wuzihua','dawuzihua'],
-  'yitaihua':   ['wuhua','zhenghua','lanhua'],
-  'wuzihua':    ['zhenghua','lanhua','yitaihua','wuhua','wuzi'],
-  'dawuzihua':  ['zhenghua','lanhua','yitaihua','wuhua','wuzi'],
-  // 無字 exclusions
-  'wuzi':       ['fengpai','fengpai2','sanyuan','wuzihua','dawuzihua'],
-  // 自摸 / 門清自摸
-  'zimo':       ['jihu','menqingzimo','menqing','shuangxiang','sanxiang'],
-  'menqingzimo':['zimo','jihu'],
-  'menqing':    ['zimo'],
-  // 聽牌
-  'tingpai':    ['jihu','menqingting'],
-  'menqingting':['jihu','tingpai'],
-  'jihu':       ['zimo','menqingzimo','tingpai','menqingting'],
-  // 平胡
-  'pinghu':     ['duidui','duipeng'],
-  'duipeng':    ['pinghu','dandu','jiadu'],
-  'dandu':      ['duipeng'],
-  'jiadu':      ['duipeng'],
-  'duidui':     ['pinghu','jianjian'],
-  'jianjian':   ['duidui'],
-  // 海底/河底
-  'haidi':      ['hedi'],
-  'hedi':       ['haidi'],
-  // 全求人/半求人
-  'quanqiuren': ['banqiuren','zimo'],
-  'banqiuren':  ['quanqiuren'],
-  // 天/地/人胡 mutually exclusive
-  'tianhu':     ['dihu','renhu','tiantin'],
-  'dihu':       ['tianhu','renhu','ditin'],
-  'renhu':      ['tianhu','dihu'],
-  // 天聽/地聽
-  'tiantin':    ['ditin','tianhu'],
-  'ditin':      ['tiantin','dihu'],
-  // 雙響/三響
-  'shuangxiang':['sanxiang','zimo'],
-  'sanxiang':   ['shuangxiang','zimo'],
-  // Listening
-  'yifa':       ['jihu'],
-  // Color
-  'qingyise':   ['hunyise','ziyise'],
-  'hunyise':    ['qingyise','ziyise'],
-  'ziyise':     ['qingyise','hunyise'],
-  // 么九
-  'qingmejiu':  ['hunmejiu'],
-  'hunmejiu':   ['qingmejiu'],
-  // 三元 exclusions
-  'dasanyuan':  ['xiaosanyuan','sanyuan'],
-  'xiaosanyuan':['dasanyuan','sanyuan'],
-  'sanyuan':    ['dasanyuan','xiaosanyuan'],
-  // 風牌 exclusions
-  'dasanfeng':  ['xiaosanfeng'],
-  'xiaosanfeng':['dasanfeng'],
-  // 四喜 exclusions
-  'dasixyi':    ['xiaosixyi','fengpai','fengpai2'],
-  'xiaosixyi':  ['dasixyi','fengpai','fengpai2'],
-  'fengpai':    ['dasixyi','xiaosixyi','wuzi'],
-  'fengpai2':   ['dasixyi','xiaosixyi','wuzi'],
-  // 般高 mutually exclusive
-  'yibangao':   ['liangbg','sanbangao','sibangao'],
-  'liangbg':    ['yibangao','sanbangao','sibangao'],
-  'sanbangao':  ['yibangao','liangbg','sibangao'],
-  'sibangao':   ['yibangao','liangbg','sanbangao'],
-  // 暗刻 mutually exclusive
-  'eran2':      ['eran3','eran4','eran5','jianjian'],
-  'eran3':      ['eran2','eran4','eran5','jianjian'],
-  'eran4':      ['eran2','eran3','eran5','jianjian'],
-  'eran5':      ['eran2','eran3','eran4','jianjian'],
-  // 兄弟 — NOT mutually exclusive (removed old exclusions)
-  // 姊妹 mutually exclusive
-  'erjimei':    ['xiaosanjm','sanjimei','xiaosijm','sijimei','xiaowujm','wujimei','xiaoliujm'],
-  'xiaosanjm':  ['erjimei','sanjimei','xiaosijm','sijimei','xiaowujm','wujimei','xiaoliujm'],
-  'sanjimei':   ['erjimei','xiaosanjm','xiaosijm','sijimei','xiaowujm','wujimei','xiaoliujm'],
-  'xiaosijm':   ['erjimei','xiaosanjm','sanjimei','sijimei','xiaowujm','wujimei','xiaoliujm'],
-  'sijimei':    ['erjimei','xiaosanjm','sanjimei','xiaosijm','xiaowujm','wujimei','xiaoliujm'],
-  'xiaowujm':   ['erjimei','xiaosanjm','sanjimei','xiaosijm','sijimei','wujimei','xiaoliujm'],
-  'wujimei':    ['erjimei','xiaosanjm','sanjimei','xiaosijm','sijimei','xiaowujm','xiaoliujm','dasandi'],
-  'xiaoliujm':  ['erjimei','xiaosanjm','sanjimei','xiaosijm','sijimei','xiaowujm','wujimei','dasandi'],
-  // 大三兄弟 exclusive to 小五/五/小六姊妹
-  'dasandi':    ['xiaowujm','wujimei','xiaoliujm'],
-  // 相逢 mutually exclusive
-  'erxf':       ['sanxf'],
-  'sanxf':      ['erxf'],
-  // 同順 mutually exclusive
-  'sitongshun': ['witongshun'],
-  'witongshun': ['sitongshun'],
-  // 步高 mutually exclusive
-  'yisansanbg': ['yisibg','yiwubg'],
-  'yisibg':     ['yisansanbg','yiwubg'],
-  'yiwubg':     ['yisansanbg','yisibg'],
-  // 嚦咕
-  'likufly':    ['liku'],
-  'liku':       ['likufly'],
-};
-
-// Rules that support multiple counts (id → max count)
-const JIFAN_MULTI = {
-  'zhenghua':  2,
-  'lanhua':    6,
-  'fengpai':   2,
-  'fengpai2':  2,
-  'gang':      4,
-  'angang':    4,
-  'erjimei':   2,   // max 2 (not 3 — 三姊妹 is separate)
-  'xiaosanjm': 1,   // selectable only once
-  'sigui1':    4,
-  'sigui2':    4,
-  'sigui4':    4,
-};
-
-// Common rules shown at top
-const JIFAN_COMMON = [
-  'pinghu','zimo','menqingzimo','menqing','menqingting','tingpai',
-  'wuhua','zhenghua','lanhua',
-  'duipeng','qingyise',
-  'yibangao','liangbg','sanbangao','sibangao',
-  'wuzi','duanme',
-  'fengpai','fengpai2','gang','angang',
-  'erjimei','xiaosanjm',
-];
-let _jifanWinner = null;
-let _jifanCat = null;
-
-function openJifanModal(wi) {
-  _jifanWinner = wi;
-  _jifanCat = FANSHU_CATS[0];
-  document.getElementById('jifanModal').classList.add('open');
-  renderJifanModal();
-}
-function closeJifanModal() { document.getElementById('jifanModal').classList.remove('open'); }
-
-function renderJifanModal() {
-  const wi = _jifanWinner;
-  const cat = _jifanCat;
-  const g = S.game;
-  const p = g.players[wi];
-  const w = S.winInput;
-  const selMap = w.selectedRules[wi] || {};
-  const enabledRules = S.fanshu.filter(r=>r.enabled);
-
-  // Build excluded set
-  const excludedIds = new Set();
-  Object.keys(selMap).filter(id=>selMap[id]>0).forEach(id => {
-    (JIFAN_EXCLUSIONS[id]||[]).forEach(ex => excludedIds.add(ex));
-  });
-
-  const total = Object.entries(selMap).reduce((sum,[id,cnt])=>{
-    const r = S.fanshu.find(x=>x.id===id);
-    return sum + (r?r.fan*cnt:0);
-  },0);
-
-  const selSummary = Object.entries(selMap)
-    .filter(([,cnt])=>cnt>0)
-    .map(([id,cnt])=>{const r=S.fanshu.find(x=>x.id===id);return r?`${r.name}${cnt>1?'×'+cnt:''}(${r.fan*cnt})`:''})
-    .filter(Boolean).join(' + ');
-
-  const commonRules = JIFAN_COMMON.map(id=>enabledRules.find(r=>r.id===id)).filter(Boolean);
-  const catRules = enabledRules.filter(r=>r.cat===cat);
-
-  function ruleRow(r) {
-    const cnt = selMap[r.id] || 0;
-    const sel = cnt > 0;
-    const excluded = excludedIds.has(r.id) && !sel;
-    const isMulti = !!JIFAN_MULTI[r.id];
-    const maxCnt = JIFAN_MULTI[r.id] || 1;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);margin-bottom:5px;
-      background:${sel?'#fff7ed':excluded?'var(--bg2)':'var(--bg)'};
-      border:1.5px solid ${sel?'var(--orange)':'var(--bg2)'};
-      opacity:${excluded?'0.35':'1'}">
-      ${isMulti ? `
-        <button onclick="${excluded?'':`adjustJifanCount('${r.id}',${wi},-1)`}"
-          style="width:28px;height:28px;border-radius:6px;border:1px solid var(--bg2);background:var(--bg);cursor:pointer;font-size:16px;flex-shrink:0">−</button>
-        <div style="min-width:20px;text-align:center;font-size:15px;font-weight:700;color:var(--orange)">${cnt}</div>
-        <button onclick="${excluded?'':`adjustJifanCount('${r.id}',${wi},1)`}"
-          style="width:28px;height:28px;border-radius:6px;border:1px solid var(--bg2);background:var(--bg);cursor:pointer;font-size:16px;flex-shrink:0">＋</button>
-      ` : `
-        <div onclick="${excluded?'':`toggleJifanRule('${r.id}',${wi})`}"
-          style="width:22px;height:22px;border-radius:50%;border:2px solid ${sel?'var(--orange)':'var(--bg2)'};
-          background:${sel?'var(--orange)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:${excluded?'default':'pointer'}">
-          ${sel?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':''}
-        </div>
-      `}
-      <div style="flex:1;cursor:${excluded||isMulti?'default':'pointer'}" onclick="${excluded||isMulti?'':`toggleJifanRule('${r.id}',${wi})`}">
-        <div style="font-size:13px;font-weight:${sel?'700':'500'};color:${sel?'var(--orange)':'var(--text)'}">${r.name}${excluded?' · 互斥':''}</div>
-        <div style="font-size:10px;color:var(--text2)">${r.desc}</div>
-      </div>
-      <div style="font-size:15px;font-weight:700;color:${sel?'var(--orange)':'var(--text3)'}">+${r.fan}${isMulti&&cnt>1?'×'+cnt:''}</div>
-    </div>`;
-  }
-
-  document.getElementById('jifanContent').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div style="font-size:17px;font-weight:700">${p.emoji} ${esc(p.name)} 計番</div>
-      <button onclick="closeJifanModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">關閉</button>
-    </div>
-    <div style="background:${total>0?'#fff7ed':'var(--bg2)'};border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:11px;color:var(--text2);font-weight:600">已選番數</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;word-break:break-all">${selSummary||'尚未選擇'}</div>
-        </div>
-        <div style="font-size:32px;font-weight:900;color:var(--orange);flex-shrink:0;margin-left:10px">${total}<span style="font-size:13px">番</span></div>
-      </div>
-      <button onclick="applyJifan(${wi})" style="width:100%;margin-top:8px;padding:9px;border-radius:var(--radius-sm);border:none;
-        background:${total>0?'var(--orange)':'var(--bg2)'};color:${total>0?'#fff':'var(--text3)'};font-size:14px;font-weight:700;
-        cursor:${total>0?'pointer':'default'};font-family:'Noto Sans TC',sans-serif">
-        套用 ${total}番 → 番數輸入
-      </button>
-    </div>
-    <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:0.5px;margin-bottom:6px">常用</div>
-    ${commonRules.map(r=>ruleRow(r)).join('')}
-    <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:0.5px;margin:12px 0 6px">所有番種</div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
-      ${FANSHU_CATS.map(c=>`<button onclick="_jifanCat='${c}';renderJifanModal()"
-        style="padding:4px 9px;border-radius:99px;border:1px solid ${c===cat?'var(--orange)':'var(--bg2)'};
-        background:${c===cat?'#fff7ed':'var(--bg)'};color:${c===cat?'var(--orange)':'var(--text2)'};
-        font-size:10px;font-weight:${c===cat?'700':'400'};cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap">
-        ${c}</button>`).join('')}
-    </div>
-    ${catRules.length===0?`<div style="color:var(--text3);font-size:13px;padding:8px 0">此類別已全部停用</div>`:''}
-    ${catRules.map(r=>ruleRow(r)).join('')}
-    ${Object.values(selMap).some(c=>c>0)?`<button onclick="clearJifan(${wi})"
-      style="width:100%;margin-top:10px;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--bg2);
-      background:var(--bg);color:var(--text2);font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">
-      清除所有選擇</button>`:''}
-    <div style="height:20px"></div>
-  `;
-}
-
-function toggleJifanRule(id, wi) {
-  const w = S.winInput;
-  if (!w.selectedRules[wi]) w.selectedRules[wi] = {};
-  const cur = w.selectedRules[wi][id] || 0;
-  if (cur > 0) {
-    delete w.selectedRules[wi][id];
-  } else {
-    // Remove mutually exclusive rules
-    (JIFAN_EXCLUSIONS[id]||[]).forEach(ex => delete w.selectedRules[wi][ex]);
-    w.selectedRules[wi][id] = 1;
-  }
-  renderJifanModal();
-}
-
-function adjustJifanCount(id, wi, delta) {
-  const w = S.winInput;
-  if (!w.selectedRules[wi]) w.selectedRules[wi] = {};
-  const max = JIFAN_MULTI[id] || 1;
-  const cur = w.selectedRules[wi][id] || 0;
-  const newVal = Math.max(0, Math.min(max, cur + delta));
-  if (newVal === 0) delete w.selectedRules[wi][id];
-  else {
-    if (cur === 0) (JIFAN_EXCLUSIONS[id]||[]).forEach(ex => delete w.selectedRules[wi][ex]);
-    w.selectedRules[wi][id] = newVal;
-  }
-  renderJifanModal();
-}
-
-function clearJifan(wi) {
-  S.winInput.selectedRules[wi] = {};
-  renderJifanModal();
-}
-
-function applyJifan(wi) {
-  const selMap = S.winInput.selectedRules[wi] || {};
-  const total = Object.entries(selMap).reduce((sum,[id,cnt])=>{
-    const r = S.fanshu.find(x=>x.id===id);
-    return sum + (r?r.fan*cnt:0);
-  },0);
-  if (total > 0) {
-    S.winInput.fans[wi] = total;
-    const el = document.getElementById(`fan-input-${wi}`);
-    if (el) el.value = total;
-    updatePreviewOnly();
-  }
-  closeJifanModal();
-  renderWinModal();
 }
 
 // ── Surrender (投降) ──────────────────────────────────────────────────────────
@@ -2324,116 +1824,6 @@ function confirmSurrender() {
   saveWithUndo({ ...g, chains:newChains, log:[log,...g.log] });
   closeSurrenderModal();
   renderTab();
-}
-
-// ── 番數表 edit (setup screen) ────────────────────────────────────────────────
-function renderFanshuEdit() {
-  const rules = S.fanshu;
-  const cat = S.fanshuCat;
-  const catRules = rules.filter(r=>r.cat===cat);
-
-  return `<div style="flex:1;display:flex;flex-direction:column;overflow:hidden;height:100%">
-    <div style="padding:16px 16px 0;flex-shrink:0">
-      <div class="row" style="margin-bottom:12px">
-        <button class="back-btn" style="margin-bottom:0" onclick="saveFanshu(S.fanshu);S.view='setup';render()">← 返回</button>
-        <h2 style="margin:0;flex:1;text-align:center;font-size:18px">番數表設定</h2>
-        <button onclick="resetFanshu()" style="background:none;border:none;font-size:12px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif">重設</button>
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        ${FANSHU_CATS.map(c=>`<button onclick="S.fanshuCat='${c}';renderFanshuPage()"
-          style="padding:5px 10px;border-radius:99px;border:1px solid ${c===cat?'var(--orange)':'var(--bg2)'};
-          background:${c===cat?'#fff7ed':'var(--bg)'};color:${c===cat?'var(--orange)':'var(--text2)'};
-          font-size:11px;font-weight:${c===cat?'700':'400'};cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap">
-          ${c}</button>`).join('')}
-      </div>
-    </div>
-    <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 16px">
-      ${catRules.map(r=>`
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:0.5px solid var(--bg2)">
-        <div onclick="toggleFanshu('${r.id}')" style="width:40px;height:24px;border-radius:12px;background:${r.enabled?'var(--orange)':'var(--bg2)'};
-          position:relative;cursor:pointer;flex-shrink:0;transition:background 0.2s">
-          <div style="position:absolute;top:3px;${r.enabled?'right:3px':'left:3px'};width:18px;height:18px;border-radius:9px;background:#fff;transition:all 0.2s"></div>
-        </div>
-        <div style="flex:1;min-width:0;opacity:${r.enabled?'1':'0.4'}">
-          <div style="font-size:14px;font-weight:600">${r.name}</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:1px">${r.desc}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;opacity:${r.enabled?'1':'0.4'}">
-          <button onclick="adjustFanshuVal('${r.id}',-1)" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--bg2);background:var(--bg);cursor:pointer;font-size:14px">-</button>
-          <input type="number" value="${r.fan}" min="1" max="999"
-            onchange="setFanshuVal('${r.id}',this.value)"
-            style="width:46px;height:26px;text-align:center;border-radius:6px;border:1px solid var(--bg2);background:var(--bg);font-size:13px;font-weight:700;color:var(--orange);font-family:'Noto Sans TC',sans-serif">
-          <span style="font-size:11px;color:var(--text2)">番</span>
-          <button onclick="adjustFanshuVal('${r.id}',1)" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--bg2);background:var(--bg);cursor:pointer;font-size:14px">+</button>
-        </div>
-      </div>`).join('')}
-      <div style="padding-top:16px">
-        <button class="start-btn" onclick="saveFanshu(S.fanshu);S.view='setup';render()">儲存並返回</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-function renderFanshuPage() {
-  const mc = document.getElementById('main-content');
-  if (mc) mc.innerHTML = renderFanshuEdit();
-}
-
-function toggleFanshu(id) {
-  const r = S.fanshu.find(x=>x.id===id);
-  if (r) r.enabled = !r.enabled;
-  renderFanshuPage();
-}
-function adjustFanshuVal(id, delta) {
-  const r = S.fanshu.find(x=>x.id===id);
-  if (r) r.fan = Math.max(1, r.fan + delta);
-  renderFanshuPage();
-}
-function setFanshuVal(id, val) {
-  const r = S.fanshu.find(x=>x.id===id);
-  const n = parseInt(val);
-  if (r && !isNaN(n) && n >= 1) r.fan = n;
-}
-function resetFanshu() {
-  if (!confirm('重設所有番數至預設值？')) return;
-  S.fanshu = FANSHU_DEFAULT.map(r=>({...r, enabled: r.defaultOff ? false : true}));
-  saveFanshu(S.fanshu);
-  renderFanshuPage();
-}
-
-// ── 番數表 reference modal (in-game read-only) ────────────────────────────────
-function openFanshuRef() {
-  document.getElementById('fanshuRefModal').classList.add('open');
-  renderFanshuRefModal(FANSHU_CATS[0]);
-}
-function closeFanshuRef() { document.getElementById('fanshuRefModal').classList.remove('open'); }
-
-function renderFanshuRefModal(cat) {
-  const rules = S.fanshu.filter(r=>r.cat===cat&&r.enabled);
-  const allRules = S.fanshu.filter(r=>r.enabled);
-
-  document.getElementById('fanshuRefContent').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="font-size:18px;font-weight:700">📋 番數表</div>
-      <button onclick="closeFanshuRef()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">關閉</button>
-    </div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">
-      ${FANSHU_CATS.map(c=>`<button onclick="renderFanshuRefModal('${c}')"
-        style="padding:4px 8px;border-radius:99px;border:1px solid ${c===cat?'var(--orange)':'var(--bg2)'};
-        background:${c===cat?'#fff7ed':'var(--bg)'};color:${c===cat?'var(--orange)':'var(--text2)'};
-        font-size:10px;font-weight:${c===cat?'700':'400'};cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap">
-        ${c}</button>`).join('')}
-    </div>
-    ${rules.length===0?`<div style="color:var(--text3);font-size:13px;padding:16px 0">此類別已全部停用</div>`:''}
-    ${rules.map(r=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--bg2)">
-      <div>
-        <div style="font-size:14px;font-weight:600">${r.name}</div>
-        <div style="font-size:11px;color:var(--text2)">${r.desc}</div>
-      </div>
-      <div style="font-size:18px;font-weight:900;color:var(--orange);flex-shrink:0;margin-left:8px">${r.fan}番</div>
-    </div>`).join('')}
-  `;
 }
 
 // ── Undo ──────────────────────────────────────────────────────────────────────
@@ -2745,13 +2135,6 @@ async function pushToLovable() {
 
 render();
 checkSpectatorMode();
-
-// Tap outside modal sheet to close
-document.addEventListener('click', e => {
-  if (e.target.classList.contains('modal-overlay') && e.target.classList.contains('open')) {
-    e.target.classList.remove('open');
-  }
-});
   // Register service worker for PWA
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
