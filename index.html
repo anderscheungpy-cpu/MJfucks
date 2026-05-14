@@ -192,37 +192,6 @@
   .home-btn.secondary { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 14px; }
-
-
-  /* Tablet / landscape */
-  @media (min-width: 600px) {
-    #root { max-width: 600px; }
-    .player-card { width: 160px; }
-    .cross-outer { grid-template-columns: 1fr 160px 1fr; gap: 14px; }
-    .player-emoji { font-size: 40px; }
-    .player-name { font-size: 16px; }
-    .player-score { font-size: 32px; }
-    .modal-sheet { max-width: 600px; }
-    .tab-bar { max-width: 600px; }
-    .home-btn { font-size: 16px; padding: 14px; }
-  }
-
-  @media (min-width: 900px) {
-    #root { max-width: 780px; }
-    .player-card { width: 200px; }
-    .cross-outer { grid-template-columns: 1fr 200px 1fr; gap: 18px; }
-    .player-emoji { font-size: 48px; }
-    .player-name { font-size: 18px; }
-    .player-score { font-size: 38px; }
-    .modal-sheet { max-width: 780px; }
-    .tab-bar { max-width: 780px; }
-    .center-wind { font-size: 16px; }
-    .liuju-btn { font-size: 16px; padding: 10px 16px; }
-  }
-
-  /* Landscape phone — reduce vertical padding */
-  @media (max-height: 500px) {
-    .player-card { padding: 8px 6px; }
 </style>
 </head>
 <body>
