@@ -12,253 +12,253 @@
 <title>麻雀記分</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #ede8df;
-    --bg2: #e4ddd3;
-    --card: #ffffff;
-    --text: #2c2825;
-    --text2: #8a7f74;
-    --text3: #b8ad9e;
-    --green: #3a8c5c;
-    --red: #c94040;
-    --orange: #d4732a;
-    --dealer-bg: #e8a030;
-    --dealer-text: #fff;
-    --tab-active: #6b5c3e;
-    --pill-bg: #e4ddd3;
-    --pill-text: #6b5c3e;
-    --modal-overlay: rgba(0,0,0,0.35);
-    --radius: 18px;
-    --radius-sm: 12px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; background: var(--bg); font-family: 'Noto Sans TC', sans-serif; color: var(--text); overflow: hidden; }
-  #root { display: flex; flex-direction: column; height: 100%; max-width: 430px; margin: 0 auto; position: relative; }
+:root {
+--bg: #ede8df;
+--bg2: #e4ddd3;
+--card: #ffffff;
+--text: #2c2825;
+--text2: #8a7f74;
+--text3: #b8ad9e;
+--green: #3a8c5c;
+--red: #c94040;
+--orange: #d4732a;
+--dealer-bg: #e8a030;
+--dealer-text: #fff;
+--tab-active: #6b5c3e;
+--pill-bg: #e4ddd3;
+--pill-text: #6b5c3e;
+--modal-overlay: rgba(0,0,0,0.35);
+--radius: 18px;
+--radius-sm: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); font-family: 'Noto Sans TC', sans-serif; color: var(--text); overflow: hidden; }
+#root { display: flex; flex-direction: column; height: 100%; max-width: 430px; margin: 0 auto; position: relative; }
 
-  /* ── Tab bar ── */
-  .tabbar { display: flex; background: var(--bg); border-top: 1px solid var(--bg2); padding: 8px 0 20px; flex-shrink: 0; }
-  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; }
-  .tab svg { width: 22px; height: 22px; }
-  .tab span { font-size: 11px; color: var(--text3); }
-  .tab.active span { color: var(--tab-active); font-weight: 700; }
-  .tab.active svg path, .tab.active svg rect, .tab.active svg line { stroke: var(--tab-active); }
-  .tab svg path, .tab svg rect, .tab svg line { stroke: var(--text3); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* ── Tab bar ── */
+.tabbar { display: flex; background: var(--bg); border-top: 1px solid var(--bg2); padding: 8px 0 20px; flex-shrink: 0; }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; }
+.tab svg { width: 22px; height: 22px; }
+.tab span { font-size: 11px; color: var(--text3); }
+.tab.active span { color: var(--tab-active); font-weight: 700; }
+.tab.active svg path, .tab.active svg rect, .tab.active svg line { stroke: var(--tab-active); }
+.tab svg path, .tab svg rect, .tab svg line { stroke: var(--text3); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
-  /* ── Pages ── */
-  .page { display: none; flex: 1; overflow-y: auto; overflow-x: hidden; }
-  .page.active { display: block; }
+/* ── Pages ── */
+.page { display: none; flex: 1; overflow-y: auto; overflow-x: hidden; }
+.page.active { display: block; }
 
-  /* ── Game page ── */
-  .game-page { background: var(--bg); padding: 8px 12px 0; display: flex; flex-direction: column; height: calc(100dvh - 80px); box-sizing: border-box; }
-  .round-info { text-align: center; margin-bottom: 8px; flex-shrink: 0; }
-  .round-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--bg2); border-radius: 99px; padding: 4px 14px; font-size: 13px; color: var(--text2); font-weight: 500; }
-  .round-badge .arrow { color: var(--orange); font-size: 12px; }
+/* ── Game page ── */
+.game-page { background: var(--bg); padding: 8px 12px 0; display: flex; flex-direction: column; height: calc(100dvh - 80px); box-sizing: border-box; }
+.round-info { text-align: center; margin-bottom: 8px; flex-shrink: 0; }
+.round-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--bg2); border-radius: 99px; padding: 4px 14px; font-size: 13px; color: var(--text2); font-weight: 500; }
+.round-badge .arrow { color: var(--orange); font-size: 12px; }
 
-  /* Cross layout — fills available screen height equally */
-  .cross-outer { display: grid; grid-template-columns: 1fr 130px 1fr; grid-template-rows: auto auto auto; gap: 10px; flex: 1; min-height: 0; padding: 4px 0; align-content: center; }
-  .cross-card-wrap { display: flex; justify-content: center; }
-  .cross-card-wrap-side { display: flex; justify-content: center; align-self: center; }
-  .cross-row { contents: ''; }
-  .cross-cell { min-width: 0; }
-  .cross-center-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-  .cross-spacer { display: none; }
+/* Cross layout — fills available screen height equally */
+.cross-outer { display: grid; grid-template-columns: 1fr 130px 1fr; grid-template-rows: auto auto auto; gap: 10px; flex: 1; min-height: 0; padding: 4px 0; align-content: center; }
+.cross-card-wrap { display: flex; justify-content: center; }
+.cross-card-wrap-side { display: flex; justify-content: center; align-self: center; }
+.cross-row { contents: ''; }
+.cross-cell { min-width: 0; }
+.cross-center-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.cross-spacer { display: none; }
 
-  .player-card { background: var(--card); border-radius: var(--radius); padding: 14px 10px; text-align: center; cursor: pointer; transition: transform 0.1s; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; width: 130px; }
-  .player-card:active { transform: scale(0.97); }
-  .player-card.is-dealer { box-shadow: 0 2px 12px rgba(212,115,42,0.18); }
-  .dealer-badge { position: absolute; top: 6px; left: 6px; background: var(--dealer-bg); color: var(--dealer-text); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
-  .player-emoji { font-size: 34px; margin-bottom: 5px; }
-  .player-name { font-size: 15px; color: var(--text2); margin-bottom: 3px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
-  .player-score { font-size: 28px; font-weight: 900; line-height: 1; }
-  .player-score.pos { color: var(--green); }
-  .player-score.neg { color: var(--red); }
-  .player-score.zero { color: var(--text3); }
+.player-card { background: var(--card); border-radius: var(--radius); padding: 14px 10px; text-align: center; cursor: pointer; transition: transform 0.1s; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; width: 130px; }
+.player-card:active { transform: scale(0.97); }
+.player-card.is-dealer { box-shadow: 0 2px 12px rgba(212,115,42,0.18); }
+.dealer-badge { position: absolute; top: 6px; left: 6px; background: var(--dealer-bg); color: var(--dealer-text); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.player-emoji { font-size: 34px; margin-bottom: 5px; }
+.player-name { font-size: 15px; color: var(--text2); margin-bottom: 3px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
+.player-score { font-size: 28px; font-weight: 900; line-height: 1; }
+.player-score.pos { color: var(--green); }
+.player-score.neg { color: var(--red); }
+.player-score.zero { color: var(--text3); }
 
-  .center-wind { font-size: 13px; font-weight: 700; color: var(--orange); text-align: center; }
-  .liuju-btn { background: var(--card); border: none; border-radius: var(--radius-sm); padding: 10px 18px; font-size: 14px; font-family: 'Noto Sans TC', sans-serif; color: var(--text); cursor: pointer; font-weight: 500; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-  .liuju-btn:active { transform: scale(0.97); }
+.center-wind { font-size: 13px; font-weight: 700; color: var(--orange); text-align: center; }
+.liuju-btn { background: var(--card); border: none; border-radius: var(--radius-sm); padding: 10px 18px; font-size: 14px; font-family: 'Noto Sans TC', sans-serif; color: var(--text); cursor: pointer; font-weight: 500; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.liuju-btn:active { transform: scale(0.97); }
 
 
 
-  /* ── Stats page ── */
-  .stats-page { padding: 16px; }
-  .stat-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); }
-  .stat-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--bg2); }
-  .stat-emoji { font-size: 22px; }
-  .stat-name { font-size: 15px; font-weight: 700; flex: 1; }
-  .stat-pill { background: var(--pill-bg); color: var(--pill-text); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px; }
-  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; }
-  .stat-num { font-size: 20px; font-weight: 700; color: var(--text); }
-  .stat-num.crown::after { content: ' 👑'; font-size: 12px; }
-  .stat-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+/* ── Stats page ── */
+.stats-page { padding: 16px; }
+.stat-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); }
+.stat-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--bg2); }
+.stat-emoji { font-size: 22px; }
+.stat-name { font-size: 15px; font-weight: 700; flex: 1; }
+.stat-pill { background: var(--pill-bg); color: var(--pill-text); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; }
+.stat-num { font-size: 20px; font-weight: 700; color: var(--text); }
+.stat-num.crown::after { content: ' 👑'; font-size: 12px; }
+.stat-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
 
-  /* ── Log page ── */
-  .log-page { padding: 12px; }
-  .log-table { width: 100%; border-collapse: collapse; }
-  .log-header { position: sticky; top: 0; background: var(--bg); z-index: 2; }
-  .log-header td { padding: 6px 4px; text-align: center; font-size: 11px; color: var(--text2); }
-  .log-header .player-col { font-size: 12px; font-weight: 700; color: var(--text); }
-  .log-row td { padding: 8px 4px; text-align: center; font-size: 13px; border-bottom: 1px solid var(--bg2); }
-  .log-row .wind-cell { font-size: 11px; color: var(--text2); background: var(--bg2); border-radius: 8px; padding: 3px 0; }
-  .log-row .score-cell { font-weight: 700; }
-  .log-row .score-cell.pos { color: var(--green); }
-  .log-row .score-cell.neg { color: var(--red); }
-  .log-row .score-cell.zero { color: var(--text3); }
-  .log-total td { padding: 10px 4px; font-weight: 900; font-size: 15px; border-top: 2px solid var(--bg2); text-align: center; }
-  .log-section { font-size: 11px; color: var(--text3); text-align: left; padding: 12px 4px 4px; font-weight: 600; letter-spacing: 0.5px; }
+/* ── Log page ── */
+.log-page { padding: 12px; }
+.log-table { width: 100%; border-collapse: collapse; }
+.log-header { position: sticky; top: 0; background: var(--bg); z-index: 2; }
+.log-header td { padding: 6px 4px; text-align: center; font-size: 11px; color: var(--text2); }
+.log-header .player-col { font-size: 12px; font-weight: 700; color: var(--text); }
+.log-row td { padding: 8px 4px; text-align: center; font-size: 13px; border-bottom: 1px solid var(--bg2); }
+.log-row .wind-cell { font-size: 11px; color: var(--text2); background: var(--bg2); border-radius: 8px; padding: 3px 0; }
+.log-row .score-cell { font-weight: 700; }
+.log-row .score-cell.pos { color: var(--green); }
+.log-row .score-cell.neg { color: var(--red); }
+.log-row .score-cell.zero { color: var(--text3); }
+.log-total td { padding: 10px 4px; font-weight: 900; font-size: 15px; border-top: 2px solid var(--bg2); text-align: center; }
+.log-section { font-size: 11px; color: var(--text3); text-align: left; padding: 12px 4px 4px; font-weight: 600; letter-spacing: 0.5px; }
 
-  /* ── Setup page ── */
-  .setup-page { padding: 20px 16px; }
-  .setup-title { font-size: 20px; font-weight: 900; margin-bottom: 20px; color: var(--text); }
-  .seat-row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-  .seat-wind { width: 30px; height: 30px; border-radius: 8px; background: var(--bg2); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--tab-active); }
-  .seat-name { flex: 1; font-size: 15px; font-weight: 500; }
-  .seat-empty { color: var(--text3); font-size: 14px; }
-  .seat-clear { color: var(--red); font-size: 18px; background: none; border: none; cursor: pointer; padding: 4px; }
-  .setup-label { font-size: 12px; color: var(--text2); margin: 16px 0 6px; font-weight: 600; }
-  .unit-input { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--bg2); background: var(--card); font-size: 16px; font-family: 'Noto Sans TC', sans-serif; color: var(--text); outline: none; }
-  .unit-input:focus { border-color: var(--orange); }
-  .start-btn { width: 100%; margin-top: 20px; padding: 16px; background: var(--tab-active); color: #fff; border: none; border-radius: var(--radius); font-size: 17px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; }
-  .start-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+/* ── Setup page ── */
+.setup-page { padding: 20px 16px; }
+.setup-title { font-size: 20px; font-weight: 900; margin-bottom: 20px; color: var(--text); }
+.seat-row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+.seat-wind { width: 30px; height: 30px; border-radius: 8px; background: var(--bg2); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--tab-active); }
+.seat-name { flex: 1; font-size: 15px; font-weight: 500; }
+.seat-empty { color: var(--text3); font-size: 14px; }
+.seat-clear { color: var(--red); font-size: 18px; background: none; border: none; cursor: pointer; padding: 4px; }
+.setup-label { font-size: 12px; color: var(--text2); margin: 16px 0 6px; font-weight: 600; }
+.unit-input { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--bg2); background: var(--card); font-size: 16px; font-family: 'Noto Sans TC', sans-serif; color: var(--text); outline: none; }
+.unit-input:focus { border-color: var(--orange); }
+.start-btn { width: 100%; margin-top: 20px; padding: 16px; background: var(--tab-active); color: #fff; border: none; border-radius: var(--radius); font-size: 17px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; }
+.start-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-  /* ── Pick player page ── */
-  .pick-page { padding: 16px; }
-  .pick-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
-  .pick-item { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
-  .pick-item:active { opacity: 0.7; }
-  .pick-emoji { font-size: 22px; }
-  .pick-name { flex: 1; font-size: 15px; font-weight: 500; }
-  .pick-chevron { color: var(--text3); }
-  .back-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; font-size: 15px; color: var(--orange); font-family: 'Noto Sans TC', sans-serif; cursor: pointer; margin-bottom: 16px; padding: 0; }
+/* ── Pick player page ── */
+.pick-page { padding: 16px; }
+.pick-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+.pick-item { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+.pick-item:active { opacity: 0.7; }
+.pick-emoji { font-size: 22px; }
+.pick-name { flex: 1; font-size: 15px; font-weight: 500; }
+.pick-chevron { color: var(--text3); }
+.back-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; font-size: 15px; color: var(--orange); font-family: 'Noto Sans TC', sans-serif; cursor: pointer; margin-bottom: 16px; padding: 0; }
 
-  /* ── Profiles page ── */
-  .profiles-page { padding: 16px; }
-  .page-header { display: flex; align-items: center; margin-bottom: 16px; }
-  .page-title { flex: 1; font-size: 18px; font-weight: 700; }
-  .add-btn { background: var(--tab-active); color: #fff; border: none; border-radius: 99px; padding: 6px 14px; font-size: 13px; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; font-weight: 600; }
-  .profile-item { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-  .profile-info { flex: 1; }
-  .profile-name { font-size: 15px; font-weight: 600; }
-  .profile-stats { font-size: 11px; color: var(--text2); margin-top: 2px; }
-  .icon-btn { background: none; border: 1px solid var(--bg2); border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: 'Noto Sans TC', sans-serif; }
-  .icon-btn.del { color: var(--red); border-color: #f5c5c5; }
-  .emoji-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
-  .emoji-opt { font-size: 26px; text-align: center; padding: 8px; border-radius: var(--radius-sm); background: var(--bg2); cursor: pointer; border: 2px solid transparent; }
-  .emoji-opt.sel { border-color: var(--orange); background: #fff3e0; }
+/* ── Profiles page ── */
+.profiles-page { padding: 16px; }
+.page-header { display: flex; align-items: center; margin-bottom: 16px; }
+.page-title { flex: 1; font-size: 18px; font-weight: 700; }
+.add-btn { background: var(--tab-active); color: #fff; border: none; border-radius: 99px; padding: 6px 14px; font-size: 13px; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; font-weight: 600; }
+.profile-item { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.profile-info { flex: 1; }
+.profile-name { font-size: 15px; font-weight: 600; }
+.profile-stats { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.icon-btn { background: none; border: 1px solid var(--bg2); border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; color: var(--text2); font-family: 'Noto Sans TC', sans-serif; }
+.icon-btn.del { color: var(--red); border-color: #f5c5c5; }
+.emoji-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
+.emoji-opt { font-size: 26px; text-align: center; padding: 8px; border-radius: var(--radius-sm); background: var(--bg2); cursor: pointer; border: 2px solid transparent; }
+.emoji-opt.sel { border-color: var(--orange); background: #fff3e0; }
 
-  /* ── Modal ── */
-  .modal-overlay { position: fixed; inset: 0; background: var(--modal-overlay); z-index: 100; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-  .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal-sheet { background: var(--card); border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; padding: 20px 20px 36px; transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.32,0.72,0,1); max-height: 88vh; overflow-y: auto; }
-  .modal-overlay.open .modal-sheet { transform: translateY(0); }
-  .modal-title { font-size: 20px; font-weight: 900; margin-bottom: 4px; }
-  .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
-  .modal-section { font-size: 12px; color: var(--text2); font-weight: 600; margin: 14px 0 6px; }
-  .type-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
-  .type-btn { padding: 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--bg2); background: var(--bg); font-size: 14px; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; font-weight: 500; color: var(--text); text-align: center; transition: all 0.15s; }
-  .type-btn.sel { background: #fff7ed; border-color: var(--orange); color: var(--orange); font-weight: 700; }
-  .picker-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .picker-col { background: var(--bg); border-radius: var(--radius-sm); overflow: hidden; }
-  .picker-col-title { font-size: 11px; color: var(--text2); padding: 8px 12px 4px; font-weight: 600; }
-  .picker-item { padding: 11px 12px; font-size: 15px; cursor: pointer; border-radius: 8px; margin: 2px 4px; font-weight: 500; }
-  .picker-item.sel { background: var(--orange); color: #fff; font-weight: 700; }
-  .picker-item.disabled { opacity: 0.3; pointer-events: none; }
-  .preview-bar { background: var(--bg); border-radius: var(--radius-sm); padding: 12px 14px; margin: 12px 0; font-size: 12px; line-height: 1.7; }
-  .drum-wrap { cursor: ns-resize; user-select: none; }
-  .preview-row { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; }
-  .preview-total { border-top: 1px solid var(--bg2); margin-top: 6px; padding-top: 6px; font-weight: 700; font-size: 14px; }
-  .confirm-btn { width: 100%; padding: 16px; background: var(--orange); color: #fff; border: none; border-radius: var(--radius); font-size: 17px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; margin-top: 4px; }
-  .confirm-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+/* ── Modal ── */
+.modal-overlay { position: fixed; inset: 0; background: var(--modal-overlay); z-index: 100; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-sheet { background: var(--card); border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; padding: 20px 20px 36px; transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.32,0.72,0,1); max-height: 88vh; overflow-y: auto; }
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-title { font-size: 20px; font-weight: 900; margin-bottom: 4px; }
+.modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+.modal-section { font-size: 12px; color: var(--text2); font-weight: 600; margin: 14px 0 6px; }
+.type-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+.type-btn { padding: 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--bg2); background: var(--bg); font-size: 14px; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; font-weight: 500; color: var(--text); text-align: center; transition: all 0.15s; }
+.type-btn.sel { background: #fff7ed; border-color: var(--orange); color: var(--orange); font-weight: 700; }
+.picker-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.picker-col { background: var(--bg); border-radius: var(--radius-sm); overflow: hidden; }
+.picker-col-title { font-size: 11px; color: var(--text2); padding: 8px 12px 4px; font-weight: 600; }
+.picker-item { padding: 11px 12px; font-size: 15px; cursor: pointer; border-radius: 8px; margin: 2px 4px; font-weight: 500; }
+.picker-item.sel { background: var(--orange); color: #fff; font-weight: 700; }
+.picker-item.disabled { opacity: 0.3; pointer-events: none; }
+.preview-bar { background: var(--bg); border-radius: var(--radius-sm); padding: 12px 14px; margin: 12px 0; font-size: 12px; line-height: 1.7; }
+.drum-wrap { cursor: ns-resize; user-select: none; }
+.preview-row { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; }
+.preview-total { border-top: 1px solid var(--bg2); margin-top: 6px; padding-top: 6px; font-weight: 700; font-size: 14px; }
+.confirm-btn { width: 100%; padding: 16px; background: var(--orange); color: #fff; border: none; border-radius: var(--radius); font-size: 17px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; margin-top: 4px; }
+.confirm-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-  /* ── Edit profile modal ── */
-  .edit-input { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--bg2); background: var(--bg); font-size: 16px; font-family: 'Noto Sans TC', sans-serif; color: var(--text); outline: none; margin-bottom: 12px; }
-  .edit-input:focus { border-color: var(--orange); }
-  .save-btn { width: 100%; padding: 14px; background: var(--tab-active); color: #fff; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; }
+/* ── Edit profile modal ── */
+.edit-input { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--bg2); background: var(--bg); font-size: 16px; font-family: 'Noto Sans TC', sans-serif; color: var(--text); outline: none; margin-bottom: 12px; }
+.edit-input:focus { border-color: var(--orange); }
+.save-btn { width: 100%; padding: 14px; background: var(--tab-active); color: #fff; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; }
 
-  /* ── Home (no game) ── */
-  .home-page { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; padding: 32px; }
-  .home-title { font-size: 28px; font-weight: 900; color: var(--text); margin-bottom: 8px; }
-  .home-sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; text-align: center; }
-  .home-btn { width: 100%; padding: 16px; border-radius: var(--radius); font-size: 17px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; border: none; }
-  .home-btn.primary { background: var(--tab-active); color: #fff; }
-  .home-btn.secondary { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+/* ── Home (no game) ── */
+.home-page { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; padding: 32px; }
+.home-title { font-size: 28px; font-weight: 900; color: var(--text); margin-bottom: 8px; }
+.home-sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; text-align: center; }
+.home-btn { width: 100%; padding: 16px; border-radius: var(--radius); font-size: 17px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif; cursor: pointer; border: none; }
+.home-btn.primary { background: var(--tab-active); color: #fff; }
+.home-btn.secondary { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 14px; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text3); font-size: 14px; }
 </style>
 </head>
 <body>
 <div id="root">
-  <div id="main-content" style="flex:1;overflow:hidden;display:flex;flex-direction:column;"></div>
-  <div class="tabbar" id="tabbar" style="display:none;">
-    <div class="tab active" data-tab="game" onclick="S.view==='spectator'?spectatorSwitchTab('game'):switchTab('game')">
-      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22" style="fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"/></svg>
-      <span>現時賽果</span>
-    </div>
-    <div class="tab" data-tab="stats" onclick="S.view==='spectator'?spectatorSwitchTab('stats'):switchTab('stats')">
-      <svg viewBox="0 0 24 24"><rect x="18" y="3" width="4" height="18" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="2" y="13" width="4" height="8" rx="1"/></svg>
-      <span>統計數據</span>
-    </div>
-    <div class="tab" data-tab="log" onclick="S.view==='spectator'?spectatorSwitchTab('log'):switchTab('log')">
-      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-      <span>詳細記錄</span>
-    </div>
-  </div>
+<div id="main-content" style="flex:1;overflow:hidden;display:flex;flex-direction:column;"></div>
+<div class="tabbar" id="tabbar" style="display:none;">
+<div class="tab active" data-tab="game" onclick="switchTab('game')">
+<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22" style="fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"/></svg>
+<span>現時賽果</span>
+</div>
+<div class="tab" data-tab="stats" onclick="switchTab('stats')">
+<svg viewBox="0 0 24 24"><rect x="18" y="3" width="4" height="18" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="2" y="13" width="4" height="8" rx="1"/></svg>
+<span>統計數據</span>
+</div>
+<div class="tab" data-tab="log" onclick="switchTab('log')">
+<svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+<span>詳細記錄</span>
+</div>
+</div>
 </div>
 
 <!-- Win modal -->
 <div class="modal-overlay" id="winModal">
-  <div class="modal-sheet" id="winSheet">
-    <div id="winSheetContent"></div>
-  </div>
+<div class="modal-sheet" id="winSheet">
+<div id="winSheetContent"></div>
+</div>
 </div>
 
 <!-- Edit profile modal -->
 <div class="modal-overlay" id="editModal">
-  <div class="modal-sheet">
-    <div id="editSheetContent"></div>
-  </div>
+<div class="modal-sheet">
+<div id="editSheetContent"></div>
+</div>
 </div>
 
 <!-- 詐胡 modal -->
 <div class="modal-overlay" id="zhaHuModal">
-  <div class="modal-sheet">
-    <div id="zhaHuSheetContent"></div>
-  </div>
+<div class="modal-sheet">
+<div id="zhaHuSheetContent"></div>
+</div>
 </div>
 
 <!-- Live session modal -->
 <div class="modal-overlay" id="liveModal">
-  <div class="modal-sheet">
-    <div id="liveContent"></div>
-  </div>
+<div class="modal-sheet">
+<div id="liveContent"></div>
+</div>
 </div>
 
 <!-- Surrender modal -->
 <div class="modal-overlay" id="surrenderModal">
-  <div class="modal-sheet">
-    <div id="surrenderContent"></div>
-  </div>
+<div class="modal-sheet">
+<div id="surrenderContent"></div>
+</div>
 </div>
 
 <!-- 獎罰 modal -->
 <div class="modal-overlay" id="penaltyModal">
-  <div class="modal-sheet">
-    <div id="penaltySheetContent"></div>
-  </div>
+<div class="modal-sheet">
+<div id="penaltySheetContent"></div>
+</div>
 </div>
 
 <!-- Swap modal -->
 <div class="modal-overlay" id="swapModal">
-  <div class="modal-sheet">
-    <div id="swapSheetContent"></div>
-  </div>
+<div class="modal-sheet">
+<div id="swapSheetContent"></div>
+</div>
 </div>
 
 <!-- 埋單 modal -->
 <div class="modal-overlay" id="maidanModal">
-  <div class="modal-sheet">
-    <div id="maidanSheetContent"></div>
-  </div>
+<div class="modal-sheet">
+<div id="maidanSheetContent"></div>
+</div>
 </div>
 
 <script>
@@ -284,16 +284,16 @@ function clearDaily() { localStorage.removeItem(DAILY_KEY); }
 function today() { return new Date().toISOString().slice(0,10); }
 
 function accumulateDaily(allPlayers) {
-  let daily = loadDaily();
-  // Reset if date changed
-  if (daily.date !== today()) daily = { date: today(), totals:{} };
-  allPlayers.forEach(p => {
-    if (p.score !== 0) {
-      daily.totals[p.name] = (daily.totals[p.name] || 0) + p.score;
-    }
-  });
-  saveDaily(daily);
-  return daily;
+let daily = loadDaily();
+// Reset if date changed
+if (daily.date !== today()) daily = { date: today(), totals:{} };
+allPlayers.forEach(p => {
+if (p.score !== 0) {
+daily.totals[p.name] = (daily.totals[p.name] || 0) + p.score;
+}
+});
+saveDaily(daily);
+return daily;
 }
 
 function loadProfiles() { try { return JSON.parse(localStorage.getItem(PROFILES_KEY)) || []; } catch { return []; } }
@@ -303,104 +303,104 @@ function saveGame(g) { localStorage.setItem(GAME_KEY, JSON.stringify(g)); }
 function clearGame() { localStorage.removeItem(GAME_KEY); }
 
 const DEFAULT_PROFILES = [
-  {name:'Anders', emoji:'🦊', totalScore:0, totalWins:0, totalLosses:0},
-  {name:'Philip', emoji:'🐭', totalScore:0, totalWins:0, totalLosses:0},
-  {name:'Anfern', emoji:'🐯', totalScore:0, totalWins:0, totalLosses:0},
-  {name:'Rosie',  emoji:'🐰', totalScore:0, totalWins:0, totalLosses:0},
-  {name:'Gina',   emoji:'🐮', totalScore:0, totalWins:0, totalLosses:0},
-  {name:'Kaylee', emoji:'🐻', totalScore:0, totalWins:0, totalLosses:0},
+{name:'Anders', emoji:'🦊', totalScore:0, totalWins:0, totalLosses:0},
+{name:'Philip', emoji:'🐭', totalScore:0, totalWins:0, totalLosses:0},
+{name:'Anfern', emoji:'🐯', totalScore:0, totalWins:0, totalLosses:0},
+{name:'Rosie',  emoji:'🐰', totalScore:0, totalWins:0, totalLosses:0},
+{name:'Gina',   emoji:'🐮', totalScore:0, totalWins:0, totalLosses:0},
+{name:'Kaylee', emoji:'🐻', totalScore:0, totalWins:0, totalLosses:0},
 ];
 function initProfiles() {
-  const p = loadProfiles();
-  if (p.length === 0) { saveProfiles(DEFAULT_PROFILES); return DEFAULT_PROFILES; }
-  return p;
+const p = loadProfiles();
+if (p.length === 0) { saveProfiles(DEFAULT_PROFILES); return DEFAULT_PROFILES; }
+return p;
 }
 
 let S = {
-  view: 'home',
-  tab: 'game',
-  profiles: initProfiles(),
-  game: loadGame(),
-  editingProfile: null,
-  setupSeats: [null,null,null,null],
-  setupUnitHu: 2,
-  setupUnitZimo: 1,
-  pickingFor: null,
-  winInput: { type:'hu', winners:[], discard:null, fans:{} },
-  penaltyInput: { payer:null, receiver:'all', di:1, dir:'pay' },
-  swapInput: { seatIdx:null, newPlayer:null },
-  liveCode: localStorage.getItem(LIVE_SESSION_KEY) || null,
-  editEmoji: '🐶',
+view: 'home',
+tab: 'game',
+profiles: initProfiles(),
+game: loadGame(),
+editingProfile: null,
+setupSeats: [null,null,null,null],
+setupUnitHu: 2,
+setupUnitZimo: 1,
+pickingFor: null,
+winInput: { type:'hu', winners:[], discard:null, fans:{} },
+penaltyInput: { payer:null, receiver:'all', di:1, dir:'pay' },
+swapInput: { seatIdx:null, newPlayer:null },
+liveCode: localStorage.getItem(LIVE_SESSION_KEY) || null,
+editEmoji: '🐶',
 };
 
 // ── Core logic ──────────────────────────────────────────────────────────────
 // fans: { winnerIdx: fanValue } — each winner can have a different fan count
 function calcHandPayments(game, winners, discardIdx, fans, isZimo) {
-  const dealer = game.dealer;
-  const n = game.dealerStreak;
-  const bonus = 2 * n + 1;
-  const chains = game.chains || {};
-  const currentWinners = game.currentWinners || [];
-  const unit = isZimo ? (game.unitZimo||game.unit||1) : (game.unitHu||game.unit||1);
-  const payments = [0,0,0,0];
-  const newChains = {};
-  const events = [];
+const dealer = game.dealer;
+const n = game.dealerStreak;
+const bonus = 2 * n + 1;
+const chains = game.chains || {};
+const currentWinners = game.currentWinners || [];
+const unit = isZimo ? (game.unitZimo||game.unit||1) : (game.unitHu||game.unit||1);
+const payments = [0,0,0,0];
+const newChains = {};
+const events = [];
 
-  winners.forEach(wIdx => {
-    const fan = fans[wIdx] || 1;
-    const base = fan + 5;
-    const winnerIsDealer = wIdx === dealer;
-    const losers = isZimo ? [0,1,2,3].filter(i=>i!==wIdx) : [discardIdx];
+winners.forEach(wIdx => {
+const fan = fans[wIdx] || 1;
+const base = fan + 5;
+const winnerIsDealer = wIdx === dealer;
+const losers = isZimo ? [0,1,2,3].filter(i=>i!==wIdx) : [discardIdx];
 
-    losers.forEach(lIdx => {
-      const pairKey = `${wIdx}-${lIdx}`;
-      const reverseKey = `${lIdx}-${wIdx}`;
-      const loserIsDealer = lIdx === dealer;
+losers.forEach(lIdx => {
+const pairKey = `${wIdx}-${lIdx}`;
+const reverseKey = `${lIdx}-${wIdx}`;
+const loserIsDealer = lIdx === dealer;
 
-      // base pay with 連莊 if 莊 involved
-      let dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
-      let basePay = base + dealerBonusPay;
+// base pay with 連莊 if 莊 involved
+let dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
+let basePay = base + dealerBonusPay;
 
-      const prevCumulative = chainCum(chains[pairKey]);
-      const prevPulls = chainPulls(chains[pairKey]);
-      const reverseCumulative = chainCum(chains[reverseKey]);
+const prevCumulative = chainCum(chains[pairKey]);
+const prevPulls = chainPulls(chains[pairKey]);
+const reverseCumulative = chainCum(chains[reverseKey]);
 
-      let thisPay = basePay;
-      let newCumulative = basePay;
-      let newPulls = prevPulls;
+let thisPay = basePay;
+let newCumulative = basePay;
+let newPulls = prevPulls;
 
-      if (reverseCumulative > 0 && currentWinners.includes(lIdx)) {
-        // 剪
-        const clawback = Math.floor(reverseCumulative * 0.5);
-        thisPay = basePay + clawback;
-        newCumulative = basePay;
-        newPulls = 1;
-        events.push({ type:'剪', winner:wIdx, loser:lIdx, clawback, fan, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumulative, isZimo });
-      } else if (prevCumulative > 0) {
-        // 拉
-        const pullBonus = Math.floor(prevCumulative * 0.5);
-        thisPay = basePay + pullBonus;
-        newCumulative = prevCumulative + thisPay;
-        newPulls = prevPulls + 1;
-        events.push({ type:'拉', winner:wIdx, loser:lIdx, pullBonus, fan, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, pulls:newPulls, isZimo });
-      } else {
-        newPulls = 1;
-        events.push({ type:'normal', winner:wIdx, loser:lIdx, fan, dealerBonusPay, basePay, total:thisPay, isZimo });
-      }
+if (reverseCumulative > 0 && currentWinners.includes(lIdx)) {
+// 剪
+const clawback = Math.floor(reverseCumulative * 0.5);
+thisPay = basePay + clawback;
+newCumulative = basePay;
+newPulls = 1;
+events.push({ type:'剪', winner:wIdx, loser:lIdx, clawback, fan, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumulative, isZimo });
+} else if (prevCumulative > 0) {
+// 拉
+const pullBonus = Math.floor(prevCumulative * 0.5);
+thisPay = basePay + pullBonus;
+newCumulative = prevCumulative + thisPay;
+newPulls = prevPulls + 1;
+events.push({ type:'拉', winner:wIdx, loser:lIdx, pullBonus, fan, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, pulls:newPulls, isZimo });
+} else {
+newPulls = 1;
+events.push({ type:'normal', winner:wIdx, loser:lIdx, fan, dealerBonusPay, basePay, total:thisPay, isZimo });
+}
 
-      payments[wIdx] += thisPay;
-      payments[lIdx] -= thisPay;
-      newChains[pairKey] = chainObj(newCumulative, newPulls);
-    });
-  });
+payments[wIdx] += thisPay;
+payments[lIdx] -= thisPay;
+newChains[pairKey] = chainObj(newCumulative, newPulls);
+});
+});
 
-  // Preserve chains for current winners not touched this hand
-  Object.keys(chains).forEach(key => {
-    const [w] = key.split('-').map(Number);
-    if (winners.includes(w) && !newChains[key]) newChains[key] = chains[key];
-  });
+// Preserve chains for current winners not touched this hand
+Object.keys(chains).forEach(key => {
+const [w] = key.split('-').map(Number);
+if (winners.includes(w) && !newChains[key]) newChains[key] = chains[key];
+});
 
-  return { payments, newChains, events, unit };
+return { payments, newChains, events, unit };
 }
 
 // Chain helpers — chains[key] can be legacy number or {cum, pulls}
@@ -409,53 +409,53 @@ function chainPulls(val) { return (val && typeof val === 'object') ? val.pulls :
 function chainObj(cum, pulls) { return { cum, pulls }; }
 
 function applyHand(game, result) {
-  const { type, winners, discardIdx, fans } = result;
-  const isZimo = type === 'zimo';
-  const prevDealer = game.dealer;
-  const n = game.dealerStreak;
+const { type, winners, discardIdx, fans } = result;
+const isZimo = type === 'zimo';
+const prevDealer = game.dealer;
+const n = game.dealerStreak;
 
-  if (type === 'liuju') {
-    return { ...game, dealerStreak: n+1, currentWinners:[], log:[{type:'流局', round:game.round, dealer:game.dealer, dealerStreak:n, windRound:game.windRound||0},...game.log], round:game.round+1 };
-  }
+if (type === 'liuju') {
+return { ...game, dealerStreak: n+1, currentWinners:[], log:[{type:'流局', round:game.round, dealer:game.dealer, dealerStreak:n, windRound:game.windRound||0},...game.log], round:game.round+1 };
+}
 
-  const { payments, newChains, events, unit } = calcHandPayments(game, winners, discardIdx, fans, isZimo);
-  const players = game.players.map((p,i) => ({
-    ...p,
-    score: p.score + payments[i]*unit,
-    wins: p.wins + (winners.includes(i)?1:0),
-    losses: p.losses + (payments[i]<0?1:0),
-    zimoWins: (p.zimoWins||0) + (winners.includes(i)&&isZimo?1:0),
-    huWins: (p.huWins||0) + (winners.includes(i)&&!isZimo?1:0),
-    shots: (p.shots||0) + (!isZimo&&i===discardIdx?1:0),
-  }));
+const { payments, newChains, events, unit } = calcHandPayments(game, winners, discardIdx, fans, isZimo);
+const players = game.players.map((p,i) => ({
+...p,
+score: p.score + payments[i]*unit,
+wins: p.wins + (winners.includes(i)?1:0),
+losses: p.losses + (payments[i]<0?1:0),
+zimoWins: (p.zimoWins||0) + (winners.includes(i)&&isZimo?1:0),
+huWins: (p.huWins||0) + (winners.includes(i)&&!isZimo?1:0),
+shots: (p.shots||0) + (!isZimo&&i===discardIdx?1:0),
+}));
 
-  const dealerWon = winners.includes(prevDealer);
-  const newDealer = dealerWon ? prevDealer : (prevDealer+1)%4;
-  const newStreak = dealerWon ? n+1 : 0;
-  // windRound advances each time dealer wraps from seat 3 back to seat 0
-  const windRound = (game.windRound||0) + (!dealerWon && prevDealer===3 ? 1 : 0);
-  // Track max streak per player
-  const maxStreaks = {...(game.maxStreaks||{})};
-  if (dealerWon) {
-    const dealerName = game.players[prevDealer].name;
-    maxStreaks[dealerName] = Math.max(maxStreaks[dealerName]||0, newStreak);
-  }
+const dealerWon = winners.includes(prevDealer);
+const newDealer = dealerWon ? prevDealer : (prevDealer+1)%4;
+const newStreak = dealerWon ? n+1 : 0;
+// windRound advances each time dealer wraps from seat 3 back to seat 0
+const windRound = (game.windRound||0) + (!dealerWon && prevDealer===3 ? 1 : 0);
+// Track max streak per player
+const maxStreaks = {...(game.maxStreaks||{})};
+if (dealerWon) {
+const dealerName = game.players[prevDealer].name;
+maxStreaks[dealerName] = Math.max(maxStreaks[dealerName]||0, newStreak);
+}
 
-  const pname = i => game.players[i].name;
-  const fanDesc = winners.map(w=>`${pname(w)}${fans[w]}番`).join('、');
-  const desc = isZimo
-    ? `${winners.map(pname).join('、')} 自摸 ${fanDesc}`
-    : `${winners.map(pname).join('、')} 胡 ${pname(discardIdx)} 出 ${fanDesc}`;
+const pname = i => game.players[i].name;
+const fanDesc = winners.map(w=>`${pname(w)}${fans[w]}番`).join('、');
+const desc = isZimo
+? `${winners.map(pname).join('、')} 自摸 ${fanDesc}`
+: `${winners.map(pname).join('、')} 胡 ${pname(discardIdx)} 出 ${fanDesc}`;
 
-  const log = { type:isZimo?'自摸':'食糊', desc, payments, unit, round:game.round, events, dealer:prevDealer, dealerStreak:n, windRound:game.windRound||0, playerNames:game.players.map(p=>p.name) };
-  const newGame = { ...game, players, dealer:newDealer, dealerStreak:newStreak, windRound, maxStreaks, chains:newChains, currentWinners:winners, log:[log,...game.log], round:game.round+1 };
+const log = { type:isZimo?'自摸':'食糊', desc, payments, unit, round:game.round, events, dealer:prevDealer, dealerStreak:n, windRound:game.windRound||0, playerNames:game.players.map(p=>p.name) };
+const newGame = { ...game, players, dealer:newDealer, dealerStreak:newStreak, windRound, maxStreaks, chains:newChains, currentWinners:winners, log:[log,...game.log], round:game.round+1 };
 
-  // Auto-trigger 埋單 after 北圈 completes (windRound advances to 4) with no 連莊
-  if (windRound >= 4 && (game.windRound||0) < 4 && newStreak === 0) {
-    setTimeout(() => openMaidanModal(true), 300);
-  }
+// Auto-trigger 埋單 after 北圈 completes (windRound advances to 4) with no 連莊
+if (windRound >= 4 && (game.windRound||0) < 4 && newStreak === 0) {
+setTimeout(() => openMaidanModal(true), 300);
+}
 
-  return newGame;
+return newGame;
 }
 
 // ── 詐胡 logic ────────────────────────────────────────────────────────────────
@@ -464,107 +464,107 @@ function applyHand(game, result) {
 // Dealer does NOT rotate, dealerStreak unchanged, round increments
 // currentWinners unchanged (survivors keep their chains)
 function applyZhaHu(game, payerIdx) {
-  const dealer = game.dealer;
-  const n = game.dealerStreak;
-  const bonus = 2 * n + 1;
-  const chains = game.chains || {};
-  const currentWinners = game.currentWinners || [];
-  const unit = game.unitHu || game.unit || 1;
-  const ZHA_FAN = 30;
-  const payments = [0,0,0,0];
-  const newChains = { ...chains };
-  const events = [];
+const dealer = game.dealer;
+const n = game.dealerStreak;
+const bonus = 2 * n + 1;
+const chains = game.chains || {};
+const currentWinners = game.currentWinners || [];
+const unit = game.unitHu || game.unit || 1;
+const ZHA_FAN = 30;
+const payments = [0,0,0,0];
+const newChains = { ...chains };
+const events = [];
 
-  for (let wIdx = 0; wIdx < 4; wIdx++) {
-    if (wIdx === payerIdx) continue;
-    const pairKey = `${wIdx}-${payerIdx}`;   // winner→loser (wIdx wins from payer)
-    const reverseKey = `${payerIdx}-${wIdx}`; // payer's chain against this receiver
+for (let wIdx = 0; wIdx < 4; wIdx++) {
+if (wIdx === payerIdx) continue;
+const pairKey = `${wIdx}-${payerIdx}`;   // winner→loser (wIdx wins from payer)
+const reverseKey = `${payerIdx}-${wIdx}`; // payer's chain against this receiver
 
-    const winnerIsDealer = wIdx === dealer;
-    const loserIsDealer = payerIdx === dealer;
-    const dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
-    let basePay = ZHA_FAN + dealerBonusPay; // no 底
+const winnerIsDealer = wIdx === dealer;
+const loserIsDealer = payerIdx === dealer;
+const dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
+let basePay = ZHA_FAN + dealerBonusPay; // no 底
 
-    const prevCumulative = chainCum(chains[pairKey]);
-    const prevPulls = chainPulls(chains[pairKey]);
-    const reverseCumulative = chainCum(chains[reverseKey]);
+const prevCumulative = chainCum(chains[pairKey]);
+const prevPulls = chainPulls(chains[pairKey]);
+const reverseCumulative = chainCum(chains[reverseKey]);
 
-    let thisPay = basePay;
-    let newCumulative = basePay;
-    let newPulls = prevPulls;
+let thisPay = basePay;
+let newCumulative = basePay;
+let newPulls = prevPulls;
 
-    if (reverseCumulative > 0 && currentWinners.includes(payerIdx)) {
-      const clawback = Math.floor(reverseCumulative * 0.5);
-      thisPay = basePay + clawback;
-      newCumulative = basePay;
-      newPulls = 1;
-      delete newChains[reverseKey];
-      events.push({ type:'剪', winner:wIdx, loser:payerIdx, clawback, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumulative, isZimo:false });
-    } else if (prevCumulative > 0 && currentWinners.includes(wIdx)) {
-      const pullBonus = Math.floor(prevCumulative * 0.5);
-      thisPay = basePay + pullBonus;
-      newCumulative = prevCumulative + thisPay;
-      newPulls = prevPulls + 1;
-      events.push({ type:'拉', winner:wIdx, loser:payerIdx, pullBonus, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, pulls:newPulls, isZimo:false });
-    } else {
-      newPulls = 1;
-      events.push({ type:'normal', winner:wIdx, loser:payerIdx, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, isZimo:false });
-    }
+if (reverseCumulative > 0 && currentWinners.includes(payerIdx)) {
+const clawback = Math.floor(reverseCumulative * 0.5);
+thisPay = basePay + clawback;
+newCumulative = basePay;
+newPulls = 1;
+delete newChains[reverseKey];
+events.push({ type:'剪', winner:wIdx, loser:payerIdx, clawback, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumulative, isZimo:false });
+} else if (prevCumulative > 0 && currentWinners.includes(wIdx)) {
+const pullBonus = Math.floor(prevCumulative * 0.5);
+thisPay = basePay + pullBonus;
+newCumulative = prevCumulative + thisPay;
+newPulls = prevPulls + 1;
+events.push({ type:'拉', winner:wIdx, loser:payerIdx, pullBonus, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, pulls:newPulls, isZimo:false });
+} else {
+newPulls = 1;
+events.push({ type:'normal', winner:wIdx, loser:payerIdx, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, isZimo:false });
+}
 
-    payments[wIdx] += thisPay;
-    payments[payerIdx] -= thisPay;
-    newChains[pairKey] = chainObj(newCumulative, newPulls);
-  }
+payments[wIdx] += thisPay;
+payments[payerIdx] -= thisPay;
+newChains[pairKey] = chainObj(newCumulative, newPulls);
+}
 
-  const pname = i => game.players[i].name;
-  const players = game.players.map((p,i) => ({
-    ...p,
-    score: p.score + payments[i] * unit,
-    losses: p.losses + (i === payerIdx ? 1 : 0),
-  }));
-  const desc = `${pname(payerIdx)} 詐胡`;
-  const log = { type:'詐胡', desc, payments, unit, round:game.round, events, dealer, dealerStreak:n, windRound:game.windRound||0, playerNames:game.players.map(p=>p.name) };
-  // dealer/dealerStreak/windRound/currentWinners all unchanged
-  return { ...game, players, chains:newChains, log:[log,...game.log], round:game.round+1 };
+const pname = i => game.players[i].name;
+const players = game.players.map((p,i) => ({
+...p,
+score: p.score + payments[i] * unit,
+losses: p.losses + (i === payerIdx ? 1 : 0),
+}));
+const desc = `${pname(payerIdx)} 詐胡`;
+const log = { type:'詐胡', desc, payments, unit, round:game.round, events, dealer, dealerStreak:n, windRound:game.windRound||0, playerNames:game.players.map(p=>p.name) };
+// dealer/dealerStreak/windRound/currentWinners all unchanged
+return { ...game, players, chains:newChains, log:[log,...game.log], round:game.round+1 };
 }
 
 // ── 獎罰 logic ────────────────────────────────────────────────────────────────
 // 獎罰: payer pays 1底(5番) or 2底(10番) to 1 or all 3 others
 // Uses 出銃 rate, NOT subjected to 拉/剪 or 連莊, chains unchanged
 function applyPenalty(game, subjectIdx, otherIdx, di, dir) {
-  // dir='pay': subject pays others; dir='collect': subject collects from others
-  const fan = di * 5;
-  const unit = game.unitHu || game.unit || 1;
-  const payments = [0,0,0,0];
-  const others = otherIdx === 'all' ? [0,1,2,3].filter(i=>i!==subjectIdx) : [otherIdx];
+// dir='pay': subject pays others; dir='collect': subject collects from others
+const fan = di * 5;
+const unit = game.unitHu || game.unit || 1;
+const payments = [0,0,0,0];
+const others = otherIdx === 'all' ? [0,1,2,3].filter(i=>i!==subjectIdx) : [otherIdx];
 
-  others.forEach(oIdx => {
-    if (dir === 'pay') {
-      payments[subjectIdx] -= fan;
-      payments[oIdx] += fan;
-    } else {
-      payments[subjectIdx] += fan;
-      payments[oIdx] -= fan;
-    }
-  });
+others.forEach(oIdx => {
+if (dir === 'pay') {
+payments[subjectIdx] -= fan;
+payments[oIdx] += fan;
+} else {
+payments[subjectIdx] += fan;
+payments[oIdx] -= fan;
+}
+});
 
-  const pname = i => game.players[i].name;
-  const otherDesc = otherIdx === 'all' ? '所有人' : pname(otherIdx);
-  const desc = dir === 'pay'
-    ? `${pname(subjectIdx)} 獎罰 付${di}底 → ${otherDesc}`
-    : `${pname(subjectIdx)} 獎罰 收${di}底 ← ${otherDesc}`;
-  const players = game.players.map((p,i) => ({ ...p, score: p.score + payments[i]*unit }));
-  const log = { type:'獎罰', desc, payments, unit, round:game.round, events:[], dealer:game.dealer, dealerStreak:game.dealerStreak, windRound:game.windRound||0, playerNames:game.players.map(p=>p.name) };
-  return { ...game, players, log:[log,...game.log], round:game.round+1 };
+const pname = i => game.players[i].name;
+const otherDesc = otherIdx === 'all' ? '所有人' : pname(otherIdx);
+const desc = dir === 'pay'
+? `${pname(subjectIdx)} 獎罰 付${di}底 → ${otherDesc}`
+: `${pname(subjectIdx)} 獎罰 收${di}底 ← ${otherDesc}`;
+const players = game.players.map((p,i) => ({ ...p, score: p.score + payments[i]*unit }));
+const log = { type:'獎罰', desc, payments, unit, round:game.round, events:[], dealer:game.dealer, dealerStreak:game.dealerStreak, windRound:game.windRound||0, playerNames:game.players.map(p=>p.name) };
+return { ...game, players, log:[log,...game.log], round:game.round+1 };
 }
 
 function buildPreview(g, w) {
-  const isZimo = w.type==='zimo';
-  const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
-  if (!allFansSet) return null;
-  if (w.type==='hu' && w.discard===null) return null;
-  const { payments, events, unit } = calcHandPayments(g, w.winners, w.discard, w.fans, isZimo);
-  return { payments, events, unit };
+const isZimo = w.type==='zimo';
+const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
+if (!allFansSet) return null;
+if (w.type==='hu' && w.discard===null) return null;
+const { payments, events, unit } = calcHandPayments(g, w.winners, w.discard, w.fans, isZimo);
+return { payments, events, unit };
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -573,374 +573,384 @@ function scoreClass(n) { return n>0?'pos':n<0?'neg':'zero'; }
 function fmt(n) { return (n>=0?'+':'')+n; }
 
 function render() {
-  const mc = document.getElementById('main-content');
-  const tb = document.getElementById('tabbar');
+const mc = document.getElementById('main-content');
+const tb = document.getElementById('tabbar');
 
-  if (S.view === 'home') {
-    tb.style.display='none';
-    mc.innerHTML = renderHome();
-  } else if (S.view === 'setup') {
-    tb.style.display='none';
-    mc.innerHTML = renderSetup();
-  } else if (S.view === 'pickPlayer') {
-    tb.style.display='none';
-    mc.innerHTML = renderPickPlayer();
-  } else if (S.view === 'profiles') {
-    tb.style.display='none';
-    mc.innerHTML = renderProfiles();
-    syncProfilesFromLovable();
-  } else if (S.view === 'editProfile') {
-    tb.style.display='none';
-    mc.innerHTML = renderEditProfilePage();
-  } else if (S.view === 'game') {
-    tb.style.display='flex';
-    mc.innerHTML = renderGameShell();
-    renderTab();
-  } else if (S.view === 'spectator') {
-    tb.style.display='none';
-    renderSpectatorView();
-  }
+if (S.view === 'home') {
+tb.style.display='none';
+mc.innerHTML = renderHome();
+} else if (S.view === 'setup') {
+tb.style.display='none';
+mc.innerHTML = renderSetup();
+} else if (S.view === 'pickPlayer') {
+tb.style.display='none';
+mc.innerHTML = renderPickPlayer();
+} else if (S.view === 'profiles') {
+tb.style.display='none';
+mc.innerHTML = renderProfiles();
+syncProfilesFromLovable();
+} else if (S.view === 'editProfile') {
+tb.style.display='none';
+mc.innerHTML = renderEditProfilePage();
+} else if (S.view === 'game') {
+tb.style.display='flex';
+mc.innerHTML = renderGameShell();
+renderTab();
+} else if (S.view === 'spectator') {
+tb.style.display='none';
+renderSpectatorView();
+}
 }
 
 function renderHome() {
-  const g = S.game;
-  if (g) {
-    // Show resume
-    return `<div style="padding:20px 16px;overflow-y:auto;height:100%">
-      <div style="font-size:24px;font-weight:900;margin-bottom:4px">🀄 麻雀記分</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:20px">港式台灣牌</div>
-      <div style="background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.05)">
-        <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:10px">進行中 · 第${g.round}局 · 出銃$${g.unitHu} 自摸$${g.unitZimo}/番</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-          ${g.players.map((p,i)=>`<div style="background:var(--bg);border-radius:12px;padding:10px;text-align:center">
-            <div style="font-size:18px">${p.emoji}</div>
-            <div style="font-size:12px;color:var(--text2);font-weight:500">${esc(p.name)}</div>
-            <div style="font-size:20px;font-weight:900;color:${p.score>0?'var(--green)':p.score<0?'var(--red)':'var(--text3)'}">${p.score>0?'+':''}${p.score}</div>
-          </div>`).join('')}
-        </div>
-        <button class="home-btn primary" onclick="resumeGame()">繼續遊戲</button>
-        <button class="home-btn secondary" onclick="endGame()" style="margin-top:8px">結束本局</button>
-      </div>
-      <button class="home-btn secondary" onclick="goSetup()">新遊戲</button>
-      <button class="home-btn secondary" onclick="S.view='profiles';render()" style="margin-top:8px">牌友管理</button>
-      ${(()=>{const d=loadDaily();return Object.keys(d.totals).length>0?`<button class="home-btn" style="margin-top:8px;background:#2d7a4f;color:#fff;border:none" onclick="openPushModal()">推送至 Lovable</button>`:''})()}
-    </div>`;
-  }
-  return `<div class="home-page">
-    <div style="font-size:48px;margin-bottom:4px">🀄</div>
-    <div class="home-title">麻雀記分</div>
-    <div class="home-sub">港式台灣牌<br>拉 · 剪 · 連莊</div>
-    <button class="home-btn primary" style="width:100%" onclick="goSetup()">新遊戲</button>
-    <button class="home-btn secondary" style="width:100%;margin-top:8px" onclick="S.view='profiles';render()">牌友管理</button>
+const g = S.game;
+if (g) {
+// Show resume
+return `<div style="padding:20px 16px;overflow-y:auto;height:100%">
+     <div style="font-size:24px;font-weight:900;margin-bottom:4px">🀄 麻雀記分</div>
+     <div style="font-size:13px;color:var(--text2);margin-bottom:20px">港式台灣牌</div>
+     <div style="background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:0 1px 6px rgba(0,0,0,0.05)">
+       <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:10px">進行中 · 第${g.round}局 · 出銃$${g.unitHu} 自摸$${g.unitZimo}/番</div>
+       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+         ${g.players.map((p,i)=>`<div style="background:var(--bg);border-radius:12px;padding:10px;text-align:center">
+           <div style="font-size:18px">${p.emoji}</div>
+           <div style="font-size:12px;color:var(--text2);font-weight:500">${esc(p.name)}</div>
+           <div style="font-size:20px;font-weight:900;color:${p.score>0?'var(--green)':p.score<0?'var(--red)':'var(--text3)'}">${p.score>0?'+':''}${p.score}</div>
+         </div>`).join('')}
+       </div>
+       <button class="home-btn primary" onclick="resumeGame()">繼續遊戲</button>
+       <button class="home-btn secondary" onclick="endGame()" style="margin-top:8px">結束本局</button>
+     </div>
+     <button class="home-btn secondary" onclick="goSetup()">新遊戲</button>
+     <button class="home-btn secondary" onclick="S.view='profiles';render()" style="margin-top:8px">牌友管理</button>
+     ${(()=>{const d=loadDaily();return Object.keys(d.totals).length>0?`<button class="home-btn" style="margin-top:8px;background:#2d7a4f;color:#fff;border:none" onclick="openPushModal()">推送至 Lovable</button>`:''})()}
+   </div>`;
+}
+return `<div class="home-page">
+   <div style="font-size:48px;margin-bottom:4px">🀄</div>
+   <div class="home-title">麻雀記分</div>
+   <div class="home-sub">港式台灣牌<br>拉 · 剪 · 連莊</div>
+   <button class="home-btn primary" style="width:100%" onclick="goSetup()">新遊戲</button>
+   <button class="home-btn secondary" style="width:100%;margin-top:8px" onclick="S.view='profiles';render()">牌友管理</button>
     <button class="home-btn secondary" style="width:100%;margin-top:8px" onclick="promptWatchCode()">👁 觀看直播</button>
-    ${(()=>{const d=loadDaily();return Object.keys(d.totals).length>0?`<button class="home-btn" style="width:100%;margin-top:8px;background:#2d7a4f;color:#fff;border:none" onclick="openPushModal()">推送至 Lovable</button>`:''})()}
-  </div>`;
+   ${(()=>{const d=loadDaily();return Object.keys(d.totals).length>0?`<button class="home-btn" style="width:100%;margin-top:8px;background:#2d7a4f;color:#fff;border:none" onclick="openPushModal()">推送至 Lovable</button>`:''})()}
+ </div>`;
 }
 
 function renderSetup() {
-  const seats = S.setupSeats;
-  const ready = !seats.some(s=>!s);
-  return `<div class="setup-page" style="overflow-y:auto;height:100%">
-    <button class="back-btn" onclick="S.view='home';render()">← 返回</button>
-    <div class="setup-title">新遊戲設定</div>
-    <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">選擇座位</div>
-    ${seats.map((s,i)=>`<div class="seat-row" onclick="pickSeat(${i})">
-      <div class="seat-wind">${WINDS[i]}</div>
-      ${s
-        ? `<div style="flex:1"><div style="font-size:16px">${seats_emoji(i)}</div><div class="seat-name">${esc(s)}</div></div>
-           <button class="seat-clear" onclick="clearSeat(event,${i})">✕</button>`
-        : `<div class="seat-empty" style="flex:1">點擊選擇牌友</div><div style="color:var(--text3)">›</div>`}
-    </div>`).join('')}
-    <div class="setup-label">出銃 ($/番)</div>
-    <input class="unit-input" type="number" id="unitHuInput" value="${S.setupUnitHu}" min="1" placeholder="例：2">
-    <div class="setup-label">自摸 ($/番)</div>
-    <input class="unit-input" type="number" id="unitZimoInput" value="${S.setupUnitZimo}" min="1" placeholder="例：1">
-    <button class="start-btn" ${ready?'':'disabled'} onclick="startGame()">開局！</button>
-  </div>`;
+const seats = S.setupSeats;
+const ready = !seats.some(s=>!s);
+return `<div class="setup-page" style="overflow-y:auto;height:100%">
+   <button class="back-btn" onclick="S.view='home';render()">← 返回</button>
+   <div class="setup-title">新遊戲設定</div>
+   <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">選擇座位</div>
+   ${seats.map((s,i)=>`<div class="seat-row" onclick="pickSeat(${i})">
+     <div class="seat-wind">${WINDS[i]}</div>
+     ${s
+       ? `<div style="flex:1"><div style="font-size:16px">${seats_emoji(i)}</div><div class="seat-name">${esc(s)}</div></div>
+          <button class="seat-clear" onclick="clearSeat(event,${i})">✕</button>`
+       : `<div class="seat-empty" style="flex:1">點擊選擇牌友</div><div style="color:var(--text3)">›</div>`}
+   </div>`).join('')}
+   <div class="setup-label">出銃 ($/番)</div>
+   <input class="unit-input" type="number" id="unitHuInput" value="${S.setupUnitHu}" min="1" placeholder="例：2">
+   <div class="setup-label">自摸 ($/番)</div>
+   <input class="unit-input" type="number" id="unitZimoInput" value="${S.setupUnitZimo}" min="1" placeholder="例：1">
+   <button class="start-btn" ${ready?'':'disabled'} onclick="startGame()">開局！</button>
+ </div>`;
 }
 
 function seats_emoji(i) {
-  const s = S.setupSeats[i];
-  if (!s) return '';
-  const p = S.profiles.find(p=>p.name===s);
-  return p ? p.emoji : '👤';
+const s = S.setupSeats[i];
+if (!s) return '';
+const p = S.profiles.find(p=>p.name===s);
+return p ? p.emoji : '👤';
 }
 
 function renderPickPlayer() {
-  const used = S.setupSeats.filter(Boolean);
-  const available = S.profiles.filter(p=>!used.includes(p.name));
-  return `<div class="pick-page" style="overflow-y:auto;height:100%">
-    <button class="back-btn" onclick="S.view='setup';render()">← 返回</button>
-    <div class="pick-title">選擇牌友</div>
-    ${available.map(p=>`<div class="pick-item" onclick="assignSeat('${esc(p.name)}')">
-      <span class="pick-emoji">${p.emoji}</span>
-      <span class="pick-name">${esc(p.name)}</span>
-      <span class="pick-chevron">›</span>
-    </div>`).join('')}
-    ${available.length===0?'<div class="empty-state">所有牌友均已入座</div>':''}
-    <div style="margin-top:16px;font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">或輸入臨時名字</div>
-    <div style="display:flex;gap:8px">
-      <input class="unit-input" id="tempName" type="text" placeholder="名字" style="flex:1;margin:0">
-      <button onclick="assignTemp()" style="background:var(--tab-active);color:#fff;border:none;border-radius:var(--radius-sm);padding:0 16px;font-size:14px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;font-weight:600">確認</button>
-    </div>
-    <button class="home-btn secondary" style="margin-top:12px" onclick="S.view='profiles';render()">＋ 新增牌友</button>
-  </div>`;
+const used = S.setupSeats.filter(Boolean);
+const available = S.profiles.filter(p=>!used.includes(p.name));
+return `<div class="pick-page" style="overflow-y:auto;height:100%">
+   <button class="back-btn" onclick="S.view='setup';render()">← 返回</button>
+   <div class="pick-title">選擇牌友</div>
+   ${available.map(p=>`<div class="pick-item" onclick="assignSeat('${esc(p.name)}')">
+     <span class="pick-emoji">${p.emoji}</span>
+     <span class="pick-name">${esc(p.name)}</span>
+     <span class="pick-chevron">›</span>
+   </div>`).join('')}
+   ${available.length===0?'<div class="empty-state">所有牌友均已入座</div>':''}
+   <div style="margin-top:16px;font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">或輸入臨時名字</div>
+   <div style="display:flex;gap:8px">
+     <input class="unit-input" id="tempName" type="text" placeholder="名字" style="flex:1;margin:0">
+     <button onclick="assignTemp()" style="background:var(--tab-active);color:#fff;border:none;border-radius:var(--radius-sm);padding:0 16px;font-size:14px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;font-weight:600">確認</button>
+   </div>
+   <button class="home-btn secondary" style="margin-top:12px" onclick="S.view='profiles';render()">＋ 新增牌友</button>
+ </div>`;
 }
 
 function renderProfiles() {
-  const p = S.profiles;
-  const syncStatus = S.profileSyncStatus || 'idle';
-  return `<div class="profiles-page" style="overflow-y:auto;height:100%">
-    <button class="back-btn" onclick="S.view='home';render()">← 返回</button>
-    <div class="page-header">
-      <div class="page-title">牌友管理</div>
-      <button class="add-btn" onclick="openEditProfile(null)">＋ 新增</button>
-    </div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">
-      ${syncStatus==='loading'?'⏳ 正在從 Lovable 同步...':syncStatus==='done'?'✅ 已從 Lovable 同步':syncStatus==='error'?'❌ 同步失敗，顯示本地數據':''}
-    </div>
-    ${p.length===0?'<div class="empty-state">尚未新增牌友</div>':''}
-    ${p.map((pr,i)=>{
-      const score = pr.lovableScore !== undefined ? pr.lovableScore : (pr.totalScore||0);
-      return `<div class="profile-item">
-        <span style="font-size:26px">${pr.emoji}</span>
-        <div class="profile-info">
-          <div class="profile-name">${esc(pr.name)}</div>
-          <div class="profile-stats"><span style="color:${score>=0?'var(--green)':'var(--red)'}">${score>=0?'+':''}$${score}</span></div>
-        </div>
-        <button class="icon-btn" onclick="openEditProfile(${i})" style="margin-right:4px">編輯</button>
-        <button class="icon-btn del" onclick="deleteProfile(${i})">刪除</button>
-      </div>`;
-    }).join('')}
-  </div>`;
+const p = S.profiles;
+const syncStatus = S.profileSyncStatus || 'idle';
+return `<div class="profiles-page" style="overflow-y:auto;height:100%">
+   <button class="back-btn" onclick="S.view='home';render()">← 返回</button>
+   <div class="page-header">
+     <div class="page-title">牌友管理</div>
+     <button class="add-btn" onclick="openEditProfile(null)">＋ 新增</button>
+   </div>
+   <div style="font-size:11px;color:var(--text3);margin-bottom:12px">
+     ${syncStatus==='loading'?'⏳ 正在從 Lovable 同步...':syncStatus==='done'?'✅ 已從 Lovable 同步':syncStatus==='error'?'❌ 同步失敗，顯示本地數據':''}
+   </div>
+   ${p.length===0?'<div class="empty-state">尚未新增牌友</div>':''}
+   ${p.map((pr,i)=>{
+     const score = pr.lovableScore !== undefined ? pr.lovableScore : (pr.totalScore||0);
+     return `<div class="profile-item">
+       <span style="font-size:26px">${pr.emoji}</span>
+       <div class="profile-info">
+         <div class="profile-name">${esc(pr.name)}</div>
+         <div class="profile-stats"><span style="color:${score>=0?'var(--green)':'var(--red)'}">${score>=0?'+':''}$${score}</span></div>
+       </div>
+       <button class="icon-btn" onclick="openEditProfile(${i})" style="margin-right:4px">編輯</button>
+       <button class="icon-btn del" onclick="deleteProfile(${i})">刪除</button>
+     </div>`;
+   }).join('')}
+ </div>`;
 }
 
 async function syncProfilesFromLovable() {
-  S.profileSyncStatus = 'loading';
-  if (S.view === 'profiles') document.getElementById('main-content').innerHTML = renderProfiles();
-  try {
-    const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
-    const [playersRes, resultsRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/players?select=id,name`, { headers }),
-      fetch(`${SUPABASE_URL}/rest/v1/player_results?select=player_id,amount`, { headers }),
-    ]);
-    if (!playersRes.ok || !resultsRes.ok) throw new Error('fetch failed');
-    const players = await playersRes.json();
-    const results = await resultsRes.json();
-    const totals = {};
-    results.forEach(r => { totals[r.player_id] = (totals[r.player_id]||0) + r.amount; });
-    const nameToTotal = {};
-    players.forEach(p => { if (totals[p.id] !== undefined) nameToTotal[p.name] = totals[p.id]; });
-    S.profiles = S.profiles.map(p => ({...p, lovableScore: nameToTotal[p.name] !== undefined ? nameToTotal[p.name] : p.lovableScore}));
-    S.profileSyncStatus = 'done';
-  } catch(e) { S.profileSyncStatus = 'error'; }
-  if (S.view === 'profiles') document.getElementById('main-content').innerHTML = renderProfiles();
+S.profileSyncStatus = 'loading';
+if (S.view === 'profiles') document.getElementById('main-content').innerHTML = renderProfiles();
+try {
+const headers = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
+const [playersRes, resultsRes] = await Promise.all([
+fetch(`${SUPABASE_URL}/rest/v1/players?select=id,name`, { headers }),
+fetch(`${SUPABASE_URL}/rest/v1/player_results?select=player_id,amount`, { headers }),
+]);
+if (!playersRes.ok || !resultsRes.ok) throw new Error('fetch failed');
+const players = await playersRes.json();
+const results = await resultsRes.json();
+const totals = {};
+results.forEach(r => { totals[r.player_id] = (totals[r.player_id]||0) + r.amount; });
+const nameToTotal = {};
+players.forEach(p => { if (totals[p.id] !== undefined) nameToTotal[p.name] = totals[p.id]; });
+S.profiles = S.profiles.map(p => ({...p, lovableScore: nameToTotal[p.name] !== undefined ? nameToTotal[p.name] : p.lovableScore}));
+S.profileSyncStatus = 'done';
+} catch(e) { S.profileSyncStatus = 'error'; }
+if (S.view === 'profiles') document.getElementById('main-content').innerHTML = renderProfiles();
 }
 
 function renderEditProfilePage() {
-  return `<div class="profiles-page" style="overflow-y:auto;height:100%">
-    <button class="back-btn" onclick="S.view='profiles';render()">← 返回</button>
-    <div class="page-header"><div class="page-title">${S.editingProfile===null?'新增牌友':'編輯牌友'}</div></div>
-    <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">選擇頭像</div>
-    <div class="emoji-grid">
-      ${EMOJIS.map(e=>`<div class="emoji-opt ${e===S.editEmoji?'sel':''}" onclick="S.editEmoji='${e}';render()">${e}</div>`).join('')}
-    </div>
-    <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">名字</div>
-    <input class="edit-input" id="profileNameInput" type="text" value="${S.editingProfile!==null?esc(S.profiles[S.editingProfile].name):''}" placeholder="輸入名字" maxlength="12">
-    <button class="save-btn" onclick="saveProfile()">儲存</button>
-  </div>`;
+return `<div class="profiles-page" style="overflow-y:auto;height:100%">
+   <button class="back-btn" onclick="S.view='profiles';render()">← 返回</button>
+   <div class="page-header"><div class="page-title">${S.editingProfile===null?'新增牌友':'編輯牌友'}</div></div>
+   <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">選擇頭像</div>
+   <div class="emoji-grid">
+     ${EMOJIS.map(e=>`<div class="emoji-opt ${e===S.editEmoji?'sel':''}" onclick="S.editEmoji='${e}';render()">${e}</div>`).join('')}
+   </div>
+   <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">名字</div>
+   <input class="edit-input" id="profileNameInput" type="text" value="${S.editingProfile!==null?esc(S.profiles[S.editingProfile].name):''}" placeholder="輸入名字" maxlength="12">
+   <button class="save-btn" onclick="saveProfile()">儲存</button>
+ </div>`;
 }
 
 function renderGameShell() {
-  return `<div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
-    <div class="page active" id="gameTabContent" style="overflow-y:auto"></div>
-  </div>`;
+return `<div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+   <div class="page active" id="gameTabContent" style="overflow-y:auto"></div>
+ </div>`;
 }
 
 function renderTab() {
-  const el = document.getElementById('gameTabContent');
-  if (!el) return;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===S.tab));
-  if (S.tab==='game') el.innerHTML = renderGameTab();
-  else if (S.tab==='stats') el.innerHTML = renderStatsTab();
-  else el.innerHTML = renderLogTab();
+const el = document.getElementById('gameTabContent');
+if (!el) return;
+document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===S.tab));
+if (S.tab==='game') el.innerHTML = renderGameTab();
+else if (S.tab==='stats') el.innerHTML = renderStatsTab();
+else el.innerHTML = renderLogTab();
 }
 
 function renderGameTab() {
-  const g = S.game;
-  if (!g) return '<div class="empty-state">尚未開局</div>';
+const g = S.game;
+if (!g) return '<div class="empty-state">尚未開局</div>';
 
-  // Fixed positions: player[0]=top, player[1]=right, player[2]=bottom, player[3]=left — NEVER rotate
-  const round_wind = (g.windRound||0) % 4;
-  const windCircle = WINDS[round_wind]+'圈';
+// Fixed positions: player[0]=top, player[1]=right, player[2]=bottom, player[3]=left — NEVER rotate
+const round_wind = (g.windRound||0) % 4;
+const windCircle = WINDS[round_wind]+'圈';
 
-  const card = (idx) => {
-    const p = g.players[idx];
-    const isDealer = idx===g.dealer;
-    const sc = p.score;
-    const relWind = WINDS[(idx - g.dealer + 4) % 4];
-    const posLabel = `${windCircle}${relWind}位`;
-    const streakLabel = isDealer && g.dealerStreak > 0 ? `<div style="font-size:10px;color:var(--dealer-bg);font-weight:700;margin-top:2px">連莊×${g.dealerStreak}</div>` : '';
-    return `<div class="player-card ${isDealer?'is-dealer':''}" onclick="tapWinner(${idx})">
-      ${isDealer?`<div class="dealer-badge">莊</div>`:''}
-      <div class="player-emoji">${p.emoji}</div>
-      <div class="player-name">${esc(p.name)}</div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:3px;font-weight:500">${posLabel}</div>
-      <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
-      ${streakLabel}
-    </div>`;
-  };
+const card = (idx) => {
+const p = g.players[idx];
+const isDealer = idx===g.dealer;
+const sc = p.score;
+const relWind = WINDS[(idx - g.dealer + 4) % 4];
+const posLabel = `${windCircle}${relWind}位`;
+const streakLabel = isDealer && g.dealerStreak > 0 ? `<div style="font-size:10px;color:var(--dealer-bg);font-weight:700;margin-top:2px">連莊×${g.dealerStreak}</div>` : '';
+return `<div class="player-card ${isDealer?'is-dealer':''}" onclick="tapWinner(${idx})">
+     ${isDealer?`<div class="dealer-badge">莊</div>`:''}
+     <div class="player-emoji">${p.emoji}</div>
+     <div class="player-name">${esc(p.name)}</div>
+     <div style="font-size:11px;color:var(--text3);margin-bottom:3px;font-weight:500">${posLabel}</div>
+     <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
+     ${streakLabel}
+   </div>`;
+};
 
-  const windLabel = windCircle+WINDS[g.dealer]+'風';
+const windLabel = windCircle+WINDS[g.dealer]+'風';
 
-  // Fixed seats — NEVER rotate. player[0]=bottom, [1]=right, [2]=top, [3]=left
-  // Only 莊 badge and X圈X位 label move, not the card positions
+// Fixed seats — NEVER rotate. player[0]=bottom, [1]=right, [2]=top, [3]=left
+// Only 莊 badge and X圈X位 label move, not the card positions
 
-  return `<div class="game-page">
-    <div class="round-info">
-      <div class="round-badge"><span>${windLabel}</span><span class="arrow">›</span><span style="color:var(--text2)">第${g.round}局</span><span style="color:var(--text3);font-size:11px">出銃$${g.unitHu} 自摸$${g.unitZimo}</span>${g.dealerStreak>0?`<span style="color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</span>`:''}</div>
-    </div>
-    <div class="cross-outer">
-      <div class="cross-card-wrap" style="grid-column:2;grid-row:1">${card(2)}</div>
-      <div class="cross-card-wrap-side" style="grid-column:1;grid-row:2">${card(3)}</div>
-      <div class="cross-center-col" style="grid-column:2;grid-row:2;align-self:center">
-        <div class="center-wind">${windLabel}</div>
-        <button class="liuju-btn" onclick="recordLiuju()">流局</button>
-      </div>
-      <div class="cross-card-wrap-side" style="grid-column:3;grid-row:2">${card(1)}</div>
-      <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
-    </div>
-    <div style="display:flex;justify-content:flex-end;align-items:center;padding:8px 0;flex-shrink:0">
-      ${(()=>{ const s=loadUndoStack(); return s.length>0?`<button onclick="undoLast()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-right:auto">↩ 撤銷(${s.length})</button>`:''; })()}
-      <button onclick="openLiveModal()" style="background:none;border:none;font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;color:${S.liveCode?'var(--green)':'var(--text2)'}">📡${S.liveCode?' 直播中':''}</button>
-      <button onclick="openMaidanModal()" style="background:none;border:none;font-size:13px;color:var(--tab-active);cursor:pointer;font-family:'Noto Sans TC',sans-serif">💰 埋單</button>
-      <button onclick="openSwapModal()" style="background:none;border:none;font-size:13px;color:var(--orange);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⇄ 換人</button>
-      <button onclick="S.view='home';render()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⚙</button>
-      <button onclick="endGame()" style="background:none;border:none;font-size:13px;color:var(--red);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">結束</button>
-    </div>
-  </div>`;
+return `<div class="game-page">
+   <div class="round-info">
+     <div class="round-badge"><span>${windLabel}</span><span class="arrow">›</span><span style="color:var(--text2)">第${g.round}局</span><span style="color:var(--text3);font-size:11px">出銃$${g.unitHu} 自摸$${g.unitZimo}</span>${g.dealerStreak>0?`<span style="color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</span>`:''}</div>
+   </div>
+   <div class="cross-outer">
+     <div class="cross-card-wrap" style="grid-column:2;grid-row:1">${card(2)}</div>
+     <div class="cross-card-wrap-side" style="grid-column:1;grid-row:2">${card(3)}</div>
+     <div class="cross-center-col" style="grid-column:2;grid-row:2;align-self:center">
+       <div class="center-wind">${windLabel}</div>
+       <button class="liuju-btn" onclick="recordLiuju()">流局</button>
+     </div>
+     <div class="cross-card-wrap-side" style="grid-column:3;grid-row:2">${card(1)}</div>
+     <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
+   </div>
+   <div style="display:flex;justify-content:flex-end;align-items:center;padding:8px 0;flex-shrink:0">
+     ${(()=>{ const s=loadUndoStack(); return s.length>0?`<button onclick="undoLast()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-right:auto">↩ 撤銷(${s.length})</button>`:''; })()}
+     <button onclick="openLiveModal()" style="background:none;border:none;font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;color:${S.liveCode?'var(--green)':'var(--text2)'}">📡${S.liveCode?' 直播中':''}</button>
+     <button onclick="openMaidanModal()" style="background:none;border:none;font-size:13px;color:var(--tab-active);cursor:pointer;font-family:'Noto Sans TC',sans-serif">💰 埋單</button>
+     <button onclick="openSwapModal()" style="background:none;border:none;font-size:13px;color:var(--orange);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⇄ 換人</button>
+     <button onclick="S.view='home';render()" style="background:none;border:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">⚙</button>
+     <button onclick="endGame()" style="background:none;border:none;font-size:13px;color:var(--red);cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-left:12px">結束</button>
+   </div>
+ </div>`;
 }
 
 function renderStatsTab() {
-  const g = S.game;
-  if (!g) return '<div class="empty-state" style="padding-top:60px">尚未開局</div>';
-  const allPlayers = [...g.players, ...(g.bench||[])];
-  const maxHu = Math.max(...allPlayers.map(p=>p.huWins||0));
-  const maxZimo = Math.max(...allPlayers.map(p=>p.zimoWins||0));
-  const maxShots = Math.max(...allPlayers.map(p=>p.shots||0));
-  const maxStreaks = g.maxStreaks || {};
-  // Include current streak
-  if (g.dealerStreak > 0) {
-    const dealerName = g.players[g.dealer].name;
-    maxStreaks[dealerName] = Math.max(maxStreaks[dealerName]||0, g.dealerStreak);
-  }
-  const topStreakVal = Math.max(0, ...Object.values(maxStreaks));
-  const topStreakPlayers = Object.entries(maxStreaks).filter(([,v])=>v===topStreakVal&&topStreakVal>0).map(([n])=>n);
+const g = S.game;
+if (!g) return '<div class="empty-state" style="padding-top:60px">尚未開局</div>';
+const allPlayers = [...g.players, ...(g.bench||[])];
+const maxHu = Math.max(...allPlayers.map(p=>p.huWins||0));
+const maxZimo = Math.max(...allPlayers.map(p=>p.zimoWins||0));
+const maxShots = Math.max(...allPlayers.map(p=>p.shots||0));
+const maxStreaks = g.maxStreaks || {};
+// Include current streak
+if (g.dealerStreak > 0) {
+const dealerName = g.players[g.dealer].name;
+maxStreaks[dealerName] = Math.max(maxStreaks[dealerName]||0, g.dealerStreak);
+}
+const topStreakVal = Math.max(0, ...Object.values(maxStreaks));
+const topStreakPlayers = Object.entries(maxStreaks).filter(([,v])=>v===topStreakVal&&topStreakVal>0).map(([n])=>n);
 
-  return `<div class="stats-page">
-    ${topStreakVal > 0 ? `<div class="stat-card" style="background:var(--bg2);border:none">
-      <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:4px">🏆 連莊王</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        ${topStreakPlayers.map(n=>{const p=allPlayers.find(x=>x.name===n);return p?`<span style="font-size:20px">${p.emoji}</span><span style="font-size:15px;font-weight:700">${esc(n)}</span>`:''}).join('')}
-        <span style="font-size:22px;font-weight:900;color:var(--dealer-bg);margin-left:auto">×${topStreakVal}</span>
-      </div>
-    </div>`:''}
-    ${g.bench&&g.bench.length>0?`<div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:8px;letter-spacing:0.5px">現在在座</div>`:''}
-    ${g.players.map((p,i)=>{
-      const isTopHu = (p.huWins||0)===maxHu&&maxHu>0;
-      const isTopZimo = (p.zimoWins||0)===maxZimo&&maxZimo>0;
-      const isTopShots = (p.shots||0)===maxShots&&maxShots>0;
-      const playerMaxStreak = maxStreaks[p.name]||0;
-      const isTopStreak = topStreakPlayers.includes(p.name) && topStreakVal > 0;
-      return `<div class="stat-card">
-        <div class="stat-header">
-          <span class="stat-emoji">${p.emoji}</span>
-          <span class="stat-name">${esc(p.name)}</span>
-          ${i===g.dealer?'<span class="stat-pill">莊</span>':''}
-          ${isTopHu?'<span class="stat-pill">食糊王</span>':''}
-          ${isTopZimo?'<span class="stat-pill">自摸王</span>':''}
-          ${isTopShots?'<span class="stat-pill">出銃王</span>':''}
-          ${isTopStreak?'<span class="stat-pill">連莊王</span>':''}
-        </div>
-        <div class="stat-grid">
-          <div><div class="stat-num">${p.huWins||0}${isTopHu?'<span style="font-size:12px"> 👑</span>':''}</div><div class="stat-label">食糊</div></div>
-          <div><div class="stat-num">${p.zimoWins||0}${isTopZimo?'<span style="font-size:12px"> 👑</span>':''}</div><div class="stat-label">自摸</div></div>
-          <div><div class="stat-num">${p.shots||0}${isTopShots?'<span style="font-size:12px"> 👑</span>':''}</div><div class="stat-label">出銃</div></div>
-          <div><div class="stat-num" style="color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div><div class="stat-label">總分</div></div>
-        </div>
-        ${playerMaxStreak>0?`<div style="font-size:11px;color:var(--dealer-bg);margin-top:8px;font-weight:600">最長連莊 ×${playerMaxStreak}</div>`:''}
-      </div>`;
-    }).join('')}
-    ${g.bench&&g.bench.length>0?`
-    <div style="font-size:11px;color:var(--text3);font-weight:600;margin:12px 0 8px;letter-spacing:0.5px">已離座</div>
-    ${g.bench.map(p=>`<div class="stat-card" style="opacity:0.7">
-      <div class="stat-header">
-        <span class="stat-emoji">${p.emoji}</span>
-        <span class="stat-name">${esc(p.name)}</span>
-        <span class="stat-pill">已離座</span>
-      </div>
-      <div class="stat-grid">
-        <div><div class="stat-num">${p.huWins||0}</div><div class="stat-label">食糊</div></div>
-        <div><div class="stat-num">${p.zimoWins||0}</div><div class="stat-label">自摸</div></div>
-        <div><div class="stat-num">${p.shots||0}</div><div class="stat-label">出銃</div></div>
-        <div><div class="stat-num" style="color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div><div class="stat-label">總分</div></div>
-      </div>
-    </div>`).join('')}`:''}
-  </div>`;
+return `<div class="stats-page">
+   ${topStreakVal > 0 ? `<div class="stat-card" style="background:var(--bg2);border:none">
+     <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:4px">🏆 連莊王</div>
+     <div style="display:flex;align-items:center;gap:8px">
+       ${topStreakPlayers.map(n=>{const p=allPlayers.find(x=>x.name===n);return p?`<span style="font-size:20px">${p.emoji}</span><span style="font-size:15px;font-weight:700">${esc(n)}</span>`:''}).join('')}
+       <span style="font-size:22px;font-weight:900;color:var(--dealer-bg);margin-left:auto">×${topStreakVal}</span>
+     </div>
+   </div>`:''}
+   ${g.bench&&g.bench.length>0?`<div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:8px;letter-spacing:0.5px">現在在座</div>`:''}
+   ${g.players.map((p,i)=>{
+     const isTopHu = (p.huWins||0)===maxHu&&maxHu>0;
+     const isTopZimo = (p.zimoWins||0)===maxZimo&&maxZimo>0;
+     const isTopShots = (p.shots||0)===maxShots&&maxShots>0;
+     const playerMaxStreak = maxStreaks[p.name]||0;
+     const isTopStreak = topStreakPlayers.includes(p.name) && topStreakVal > 0;
+     return `<div class="stat-card">
+       <div class="stat-header">
+         <span class="stat-emoji">${p.emoji}</span>
+         <span class="stat-name">${esc(p.name)}</span>
+         ${i===g.dealer?'<span class="stat-pill">莊</span>':''}
+         ${isTopHu?'<span class="stat-pill">食糊王</span>':''}
+         ${isTopZimo?'<span class="stat-pill">自摸王</span>':''}
+         ${isTopShots?'<span class="stat-pill">出銃王</span>':''}
+         ${isTopStreak?'<span class="stat-pill">連莊王</span>':''}
+       </div>
+       <div class="stat-grid">
+         <div><div class="stat-num">${p.huWins||0}${isTopHu?'<span style="font-size:12px"> 👑</span>':''}</div><div class="stat-label">食糊</div></div>
+         <div><div class="stat-num">${p.zimoWins||0}${isTopZimo?'<span style="font-size:12px"> 👑</span>':''}</div><div class="stat-label">自摸</div></div>
+         <div><div class="stat-num">${p.shots||0}${isTopShots?'<span style="font-size:12px"> 👑</span>':''}</div><div class="stat-label">出銃</div></div>
+         <div><div class="stat-num" style="color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div><div class="stat-label">總分</div></div>
+       </div>
+       ${playerMaxStreak>0?`<div style="font-size:11px;color:var(--dealer-bg);margin-top:8px;font-weight:600">最長連莊 ×${playerMaxStreak}</div>`:''}
+     </div>`;
+   }).join('')}
+   ${g.bench&&g.bench.length>0?`
+   <div style="font-size:11px;color:var(--text3);font-weight:600;margin:12px 0 8px;letter-spacing:0.5px">已離座</div>
+   ${g.bench.map(p=>`<div class="stat-card" style="opacity:0.7">
+     <div class="stat-header">
+       <span class="stat-emoji">${p.emoji}</span>
+       <span class="stat-name">${esc(p.name)}</span>
+       <span class="stat-pill">已離座</span>
+     </div>
+     <div class="stat-grid">
+       <div><div class="stat-num">${p.huWins||0}</div><div class="stat-label">食糊</div></div>
+       <div><div class="stat-num">${p.zimoWins||0}</div><div class="stat-label">自摸</div></div>
+       <div><div class="stat-num">${p.shots||0}</div><div class="stat-label">出銃</div></div>
+       <div><div class="stat-num" style="color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div><div class="stat-label">總分</div></div>
+     </div>
+   </div>`).join('')}`:''}
+ </div>`;
 }
 
 function renderLogTab() {
-  const g = S.game;
-  if (!g) return '<div class="empty-state" style="padding-top:60px">尚未開局</div>';
-  // Latest first (g.log is already latest first since we prepend)
-  const logs = g.log;
-  const allPlayers = [...g.players, ...(g.bench||[])];
+const g = S.game;
+if (!g) return '<div class="empty-state" style="padding-top:60px">尚未開局</div>';
+// Latest first (g.log is already latest first since we prepend)
+const logs = g.log;
+const allPlayers = [...g.players, ...(g.bench||[])];
 
-  const rows = logs.map(l => {
-    const lWindRound = (l.windRound||0) % 4;
-    const circleWind = WINDS[lWindRound];
-    const dealerWind = WINDS[l.dealer||0];
-    const windLabel = circleWind + dealerWind;
-    const streakSuffix = (l.dealerStreak||0) > 0 ? `×${(l.dealerStreak||0)+1}` : '';
+const rows = logs.map(l => {
+const lWindRound = (l.windRound||0) % 4;
+const circleWind = WINDS[lWindRound];
+const dealerWind = WINDS[l.dealer||0];
+const windLabel = circleWind + dealerWind;
+const streakSuffix = (l.dealerStreak||0) > 0 ? `×${(l.dealerStreak||0)+1}` : '';
 
-    if (l.type === '流局') {
-      return `<tr class="log-row">
-        <td><div class="wind-cell">${windLabel}<br><span style="font-size:9px">流局</span></div></td>
-        ${allPlayers.map(()=>`<td class="score-cell zero">-</td>`).join('')}
-      </tr>`;
-    }
-    if (l.type === '換人' || l.type === '投降') {
-      const icon = l.type === '投降' ? '🏳️' : '⇄';
-      return `<tr class="log-row">
-        <td colspan="${allPlayers.length+1}" style="padding:6px 8px;background:var(--bg2);font-size:11px;color:var(--text3);border-radius:4px">${icon} ${esc(l.desc||l.type)}</td>
-      </tr>`;
-    }
+if (l.type === '流局') {
+return `<tr class="log-row">
+       <td><div class="wind-cell">${windLabel}<br><span style="font-size:9px">流局</span></div></td>
+       ${allPlayers.map(()=>`<td class="score-cell zero">-</td>`).join('')}
+     </tr>`;
+}
+if (l.type === '換人' || l.type === '投降') {
+const icon = l.type === '投降' ? '🏳️' : '⇄';
+return `<tr class="log-row">
+       <td colspan="${allPlayers.length+1}" style="padding:6px 8px;background:var(--bg2);font-size:11px;color:var(--text3);border-radius:4px">${icon} ${esc(l.desc||l.type)}</td>
+     </tr>`;
+}
 
-    // Map payments: try to match by name for bench players
-    const payByName = {};
-    if (l.payments && l.playerNames) {
-      // If we stored player names in log (new format)
-      l.playerNames.forEach((name, i) => { payByName[name] = l.payments[i] || 0; });
-    } else {
-      // Old format: match by current seat index
-      g.players.forEach((p,i) => { payByName[p.name] = (l.payments||[])[i] || 0; });
-    }
+// Map payments: try to match by name for bench players
+const payByName = {};
+if (l.payments && l.playerNames) {
+// If we stored player names in log (new format)
+l.playerNames.forEach((name, i) => { payByName[name] = l.payments[i] || 0; });
+} else {
+// Old format: match by current seat index
+g.players.forEach((p,i) => { payByName[p.name] = (l.payments||[])[i] || 0; });
+}
 
-    // Parse desc to get per-player sub-labels
-    // e.g. "Anders 自摸 5番" → Anders gets "自摸5番"
-    // e.g. "Anders 胡 Rosie 出 5番" → Anders gets "食5番", Rosie gets "出銃5番"
-    const cellDesc = {};
+// Parse desc to get per-player sub-labels
+// e.g. "Anders 自摸 5番" → Anders gets "自摸5番"
+// e.g. "Anders 胡 Rosie 出 5番" → Anders gets "食5番", Rosie gets "出銃5番"
+const cellDesc = {};
     const addDesc = (name, text) => { cellDesc[name] = cellDesc[name] ? cellDesc[name] + ' + ' + text : text; };
-    if (l.desc && l.type === '自摸') {
-      const fanParts = (l.desc.split(' 自摸 ')[1] || '').split('、');
-      fanParts.forEach(part => {
-        const m = part.match(/^(.+?)(\d+)番$/);
+if (l.desc && l.type === '自摸') {
+      // Format: "Anders 自摸 Anders5番" or "Anders 自摸 Anders5番、Rosie5番"
+      // winners are everyone with positive payment
+const fanParts = (l.desc.split(' 自摸 ')[1] || '').split('、');
+fanParts.forEach(part => {
+const m = part.match(/^(.+?)(\d+)番$/);
+        if (m) cellDesc[m[1]] = `自摸${m[2]}番`;
         if (m) addDesc(m[1], `自摸${m[2]}番`);
-      });
-    } else if (l.desc && l.type === '食糊') {
-      const huParts = l.desc.match(/^(.+?) 胡 (.+?) 出 (.+)$/);
-      if (huParts) {
-        const discardStr = huParts[2];
+});
+} else if (l.desc && l.type === '食糊') {
+      // Format: "Anders 胡 Rosie 出 Anders10番"
+const huParts = l.desc.match(/^(.+?) 胡 (.+?) 出 (.+)$/);
+if (huParts) {
+        const winnerStr = huParts[1];
+const discardStr = huParts[2];
+        const fanStr = huParts[3]; // e.g. "Anders10番"
+        const fanMatch = fanStr.match(/(\d+)番/);
+        const fan = fanMatch ? fanMatch[1] : '';
+        winnerStr.split('、').forEach(n => { cellDesc[n] = `食${fan}番`; });
+        cellDesc[discardStr] = `出銃${fan}番`;
         const fanParts2 = huParts[3].split('、');
         fanParts2.forEach(part => {
           const m = part.match(/^(.+?)(\d+)番$/);
@@ -949,136 +959,140 @@ function renderLogTab() {
             addDesc(discardStr, `出銃${m[2]}番`);
           }
         });
-      }
-    } else if (l.desc && l.type === '詐胡') {
-      const m = l.desc.match(/^(.+?) 詐胡/);
+}
+} else if (l.desc && l.type === '詐胡') {
+const m = l.desc.match(/^(.+?) 詐胡/);
+      if (m) cellDesc[m[1]] = '詐胡';
       if (m) addDesc(m[1], '詐胡');
-    } else if (l.desc && l.type === '獎罰') {
-      const m = l.desc.match(/^(.+?) 獎罰 (付|收)(\d+)底/);
+} else if (l.desc && l.type === '獎罰') {
+const m = l.desc.match(/^(.+?) 獎罰 (付|收)(\d+)底/);
+      if (m) cellDesc[m[1]] = `${m[2]}${m[3]}底`;
       if (m) addDesc(m[1], `${m[2]}${m[3]}底`);
-    }
+}
 
-    return `<tr class="log-row">
-      <td>
-        <div class="wind-cell">${windLabel}${streakSuffix}</div>
-      </td>
-      ${allPlayers.map(p => {
-        const pay = payByName[p.name] || 0;
-        const sub = cellDesc[p.name] ? `<div style="font-size:9px;color:var(--text3);margin-top:1px">${cellDesc[p.name]}</div>` : '';
-        return `<td class="score-cell ${scoreClass(pay)}" style="vertical-align:top;padding-top:8px">${pay!==0?fmt(pay*l.unit):'0'}${sub}</td>`;
-      }).join('')}
-    </tr>`;
-  });
+return `<tr class="log-row">
+     <td>
+       <div class="wind-cell">${windLabel}${streakSuffix}</div>
+     </td>
+     ${allPlayers.map(p => {
+       const pay = payByName[p.name] || 0;
+       const sub = cellDesc[p.name] ? `<div style="font-size:9px;color:var(--text3);margin-top:1px">${cellDesc[p.name]}</div>` : '';
+       return `<td class="score-cell ${scoreClass(pay)}" style="vertical-align:top;padding-top:8px">${pay!==0?fmt(pay*l.unit):'0'}${sub}</td>`;
+     }).join('')}
+   </tr>`;
+});
 
-  return `<div class="log-page" style="overflow-x:auto">
-    <table class="log-table">
-      <thead class="log-header"><tr>
-        <td style="width:52px"></td>
-        ${allPlayers.map(p=>`<td class="player-col"><div>${p.emoji}</div><div>${esc(p.name)}</div><div style="font-size:12px;font-weight:700;color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div></td>`).join('')}
-      </tr></thead>
-      <tbody>
-        ${rows.join('')}
-        <tr class="log-row"><td><div class="wind-cell" style="font-size:9px">開始</div></td>${allPlayers.map(()=>`<td class="score-cell zero">0</td>`).join('')}</tr>
-      </tbody>
-    </table>
-  </div>`;
+return `<div class="log-page" style="overflow-x:auto">
+   <table class="log-table">
+     <thead class="log-header"><tr>
+       <td style="width:52px"></td>
+       ${allPlayers.map(p=>`<td class="player-col"><div>${p.emoji}</div><div>${esc(p.name)}</div><div style="font-size:12px;font-weight:700;color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div></td>`).join('')}
+     </tr></thead>
+     <tbody>
+       ${rows.join('')}
+       <tr class="log-row"><td><div class="wind-cell" style="font-size:9px">開始</div></td>${allPlayers.map(()=>`<td class="score-cell zero">0</td>`).join('')}</tr>
+     </tbody>
+   </table>
+ </div>`;
 }
 
 // ── Win modal ────────────────────────────────────────────────────────────────
 function renderWinModal() {
-  const g = S.game;
-  const w = S.winInput;
-  const isZimo = w.type==='zimo';
-  const preview = buildPreview(g, w);
-  const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
-  const canConfirm = allFansSet && w.winners.length > 0 && (isZimo || w.discard !== null);
+const g = S.game;
+const w = S.winInput;
+const isZimo = w.type==='zimo';
+const preview = buildPreview(g, w);
+const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
+const canConfirm = allFansSet && w.winners.length > 0 && (isZimo || w.discard !== null);
 
-  // Build per-winner fan picker rows
-  const fanPickerRows = w.winners.map(wi => {
-    const p = g.players[wi];
-    const curFan = w.fans[wi] || 1;
-    return `
-    <div style="margin-bottom:12px">
-      <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px">${p.emoji} ${esc(p.name)} 番數</div>
-      <div style="display:flex;align-items:center;gap:8px">
+// Build per-winner fan picker rows
+const fanPickerRows = w.winners.map(wi => {
+const p = g.players[wi];
+const curFan = w.fans[wi] || 1;
+return `
+   <div style="margin-bottom:12px">
+     <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px">${p.emoji} ${esc(p.name)} 番數</div>
+     <div style="display:flex;align-items:center;gap:8px">
+        <button ontouchstart="startRepeat(${wi},-1)" ontouchend="stopRepeat()" onmousedown="startRepeat(${wi},-1)" onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
         <button ontouchstart="startRepeat(${wi},-1,event)" ontouchend="stopRepeat()" ontouchcancel="stopRepeat()" onmousedown="startRepeat(${wi},-1,event)" onmouseup="stopRepeat()"
-          style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">−</button>
-        <div style="flex:1;position:relative">
-          <input id="fan-input-${wi}" type="number" min="1" max="250" value="${curFan}"
-            oninput="fanTyped(${wi},this.value)"
-            style="width:100%;height:52px;text-align:center;font-size:26px;font-weight:900;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);color:var(--orange);font-family:'Noto Sans TC',sans-serif;-moz-appearance:textfield;outline:none;">
-        </div>
+         style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">−</button>
+       <div style="flex:1;position:relative">
+         <input id="fan-input-${wi}" type="number" min="1" max="250" value="${curFan}"
+           oninput="fanTyped(${wi},this.value)"
+           style="width:100%;height:52px;text-align:center;font-size:26px;font-weight:900;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);color:var(--orange);font-family:'Noto Sans TC',sans-serif;-moz-appearance:textfield;outline:none;">
+       </div>
+        <button ontouchstart="startRepeat(${wi},1)" ontouchend="stopRepeat()" onmousedown="startRepeat(${wi},1)" onmouseup="stopRepeat()" onmouseleave="stopRepeat()"
         <button ontouchstart="startRepeat(${wi},1,event)" ontouchend="stopRepeat()" ontouchcancel="stopRepeat()" onmousedown="startRepeat(${wi},1,event)" onmouseup="stopRepeat()"
-          style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">＋</button>
-      </div>
-    </div>`;
-  }).join('');
+         style="width:44px;height:52px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:22px;cursor:pointer;flex-shrink:0;font-family:'Noto Sans TC',sans-serif">＋</button>
+     </div>
+   </div>`;
+}).join('');
 
-  // Build event description lines
-  const eventLines = preview ? preview.events.map(ev => {
-    const wn = g.players[ev.winner].name;
-    const ln = g.players[ev.loser].name;
-    const typeLabel = ev.isZimo ? '自摸' : '食糊';
-    const dealerPart = ev.dealerBonusPay > 0 ? ` + ${ev.dealerBonusPay}番連莊` : '';
-    if (ev.type==='normal') {
-      return `<div class="preview-row"><span>${wn}←${ln}</span><span>5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
-    }
-    if (ev.type==='拉') {
-      return `<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${ev.cumulative - ev.total}×0.5)=${ev.pullBonus}拉 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
-    }
-    if (ev.type==='剪') {
-      return `<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${ev.prevCumulative}×0.5)=${ev.clawback}番剪 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
-    }
-    return '';
-  }).join('') : '';
+// Build event description lines
+const eventLines = preview ? preview.events.map(ev => {
+const wn = g.players[ev.winner].name;
+const ln = g.players[ev.loser].name;
+const typeLabel = ev.isZimo ? '自摸' : '食糊';
+const dealerPart = ev.dealerBonusPay > 0 ? ` + ${ev.dealerBonusPay}番連莊` : '';
+if (ev.type==='normal') {
+return `<div class="preview-row"><span>${wn}←${ln}</span><span>5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+}
+if (ev.type==='拉') {
+return `<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${ev.cumulative - ev.total}×0.5)=${ev.pullBonus}拉 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+}
+if (ev.type==='剪') {
+return `<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${ev.prevCumulative}×0.5)=${ev.clawback}番剪 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+}
+return '';
+}).join('') : '';
 
-  document.getElementById('winSheetContent').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-      <div class="modal-title">${w.winners.length>0?g.players[w.winners[0]].emoji+' '+esc(g.players[w.winners[0]].name)+' 胡牌':'胡牌'}</div>
-      <button onclick="closeWinModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
-    </div>
-    <div class="modal-sub">第${g.round}局 · 出銃$${g.unitHu}/番 · 自摸$${g.unitZimo}/番 · ${g.dealerStreak>0?`連莊×${g.dealerStreak+1}`:WINDS[g.dealer]+'風'}</div>
+document.getElementById('winSheetContent').innerHTML = `
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+     <div class="modal-title">${w.winners.length>0?g.players[w.winners[0]].emoji+' '+esc(g.players[w.winners[0]].name)+' 胡牌':'胡牌'}</div>
+     <button onclick="closeWinModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
+   </div>
+   <div class="modal-sub">第${g.round}局 · 出銃$${g.unitHu}/番 · 自摸$${g.unitZimo}/番 · ${g.dealerStreak>0?`連莊×${g.dealerStreak+1}`:WINDS[g.dealer]+'風'}</div>
 
-    <div class="modal-section">胡牌方式</div>
-    <div class="type-row">
-      <button class="type-btn ${!isZimo?'sel':''}" onclick="setWinType('hu')">食糊</button>
-      <button class="type-btn ${isZimo?'sel':''}" onclick="setWinType('zimo')">自摸</button>
-    </div>
-    <div class="type-row" style="margin-top:6px">
-      <button class="type-btn" onclick="closeWinModal();openZhaHuModal(${w.winners[0]})" style="color:var(--red);border-color:#f5c5c5">詐胡</button>
-      <button class="type-btn" onclick="closeWinModal();openPenaltyModal(${w.winners[0]})" style="color:var(--orange);border-color:#ffe0b2">獎罰</button>
-    </div>
+   <div class="modal-section">胡牌方式</div>
+   <div class="type-row">
+     <button class="type-btn ${!isZimo?'sel':''}" onclick="setWinType('hu')">食糊</button>
+     <button class="type-btn ${isZimo?'sel':''}" onclick="setWinType('zimo')">自摸</button>
+   </div>
+   <div class="type-row" style="margin-top:6px">
+     <button class="type-btn" onclick="closeWinModal();openZhaHuModal(${w.winners[0]})" style="color:var(--red);border-color:#f5c5c5">詐胡</button>
+     <button class="type-btn" onclick="closeWinModal();openPenaltyModal(${w.winners[0]})" style="color:var(--orange);border-color:#ffe0b2">獎罰</button>
+   </div>
 
-    ${!isZimo?`
-    <div class="picker-row" style="margin-top:10px">
-      <div class="picker-col">
-        <div class="picker-col-title">出銃者</div>
-        ${g.players.map((p,i)=>w.winners.includes(i)?'':
-          `<div class="picker-item ${w.discard===i?'sel':''}" onclick="setDiscard(${i})">${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}</div>`
-        ).join('')}
-      </div>
-      <div class="picker-col">
-        <div class="picker-col-title">額外贏家（可選）</div>
-        ${g.players.map((p,i)=>{
-          if(w.winners[0]===i||w.discard===i) return '';
-          const isSel = w.winners.indexOf(i) > 0;
-          return `<div class="picker-item ${isSel?'sel':''}" onclick="toggleExtraWinner(${i})">${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}</div>`;
-        }).join('')}
-      </div>
-    </div>`:''}
+   ${!isZimo?`
+   <div class="picker-row" style="margin-top:10px">
+     <div class="picker-col">
+       <div class="picker-col-title">出銃者</div>
+       ${g.players.map((p,i)=>w.winners.includes(i)?'':
+         `<div class="picker-item ${w.discard===i?'sel':''}" onclick="setDiscard(${i})">${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}</div>`
+       ).join('')}
+     </div>
+     <div class="picker-col">
+       <div class="picker-col-title">額外贏家（可選）</div>
+       ${g.players.map((p,i)=>{
+         if(w.winners[0]===i||w.discard===i) return '';
+         const isSel = w.winners.indexOf(i) > 0;
+         return `<div class="picker-item ${isSel?'sel':''}" onclick="toggleExtraWinner(${i})">${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}</div>`;
+       }).join('')}
+     </div>
+   </div>`:''}
 
-    <div class="modal-section">各贏家番數</div>
-    ${fanPickerRows || '<div style="color:var(--text3);font-size:13px;padding:8px 0">請先選擇贏家</div>'}
+   <div class="modal-section">各贏家番數</div>
+   ${fanPickerRows || '<div style="color:var(--text3);font-size:13px;padding:8px 0">請先選擇贏家</div>'}
 
-    ${preview?`<div class="preview-bar" id="win-preview">
-      ${eventLines}
-      <div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">
-        ${preview.payments.map((pay,i)=>pay!==0?`<div class="preview-row preview-total"><span>${g.players[i].emoji} ${g.players[i].name}</span><span style="color:${pay>0?'var(--green)':'var(--red)'}">${pay>0?'+':''}$${pay*preview.unit}</span></div>`:'').join('')}
-      </div>
-    </div>`:`<div class="preview-bar" id="win-preview" style="color:var(--text3);font-size:13px">選擇番數後顯示計算</div>`}
+   ${preview?`<div class="preview-bar" id="win-preview">
+     ${eventLines}
+     <div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">
+       ${preview.payments.map((pay,i)=>pay!==0?`<div class="preview-row preview-total"><span>${g.players[i].emoji} ${g.players[i].name}</span><span style="color:${pay>0?'var(--green)':'var(--red)'}">${pay>0?'+':''}$${pay*preview.unit}</span></div>`:'').join('')}
+     </div>
+   </div>`:`<div class="preview-bar" id="win-preview" style="color:var(--text3);font-size:13px">選擇番數後顯示計算</div>`}
 
-    <button class="confirm-btn" id="win-confirm" ${!canConfirm?'disabled':''} onclick="confirmWin()">確認胡牌</button>
-  `;
+   <button class="confirm-btn" id="win-confirm" ${!canConfirm?'disabled':''} onclick="confirmWin()">確認胡牌</button>
+ `;
 }
 
 // ── Fan input helpers ─────────────────────────────────────────────────────────
@@ -1086,270 +1100,273 @@ let _repeatTimer = null;
 let _repeatInterval = null;
 let _repeatActive = false;
 
+function startRepeat(wi, delta) {
 function startRepeat(wi, delta, e) {
   if (e) e.preventDefault(); // prevent mouse event firing after touch
   if (_repeatActive) return;
   _repeatActive = true;
-  adjustFan(wi, delta);
-  _repeatTimer = setTimeout(() => {
+adjustFan(wi, delta);
+_repeatTimer = setTimeout(() => {
+    _repeatInterval = setInterval(() => adjustFan(wi, delta), 200);
+  }, 600);
     _repeatInterval = setInterval(() => adjustFan(wi, delta), 250);
   }, 700);
 }
 
 function stopRepeat() {
-  clearTimeout(_repeatTimer);
-  clearInterval(_repeatInterval);
-  _repeatTimer = null;
-  _repeatInterval = null;
+clearTimeout(_repeatTimer);
+clearInterval(_repeatInterval);
+_repeatTimer = null;
+_repeatInterval = null;
   _repeatActive = false;
 }
 
 function fanTyped(wi, val) {
-  const n = parseInt(val);
-  if (isNaN(n) || n < 1) return;
-  S.winInput.fans[wi] = Math.min(250, n);
-  updatePreviewOnly();
+const n = parseInt(val);
+if (isNaN(n) || n < 1) return;
+S.winInput.fans[wi] = Math.min(250, n);
+updatePreviewOnly();
 }
 
 function adjustFan(wi, delta) {
-  const cur = S.winInput.fans[wi] || 1;
-  const newVal = Math.max(1, Math.min(250, cur + delta));
-  S.winInput.fans[wi] = newVal;
-  const el = document.getElementById(`fan-input-${wi}`);
-  if (el) el.value = newVal;
-  updatePreviewOnly();
+const cur = S.winInput.fans[wi] || 1;
+const newVal = Math.max(1, Math.min(250, cur + delta));
+S.winInput.fans[wi] = newVal;
+const el = document.getElementById(`fan-input-${wi}`);
+if (el) el.value = newVal;
+updatePreviewOnly();
 }
 
 function updatePreviewOnly() {
-  // Re-render just the preview and confirm button without full modal re-render
-  const g = S.game;
-  const w = S.winInput;
-  const preview = buildPreview(g, w);
-  const isZimo = w.type === 'zimo';
-  const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
-  const canConfirm = allFansSet && w.winners.length > 0 && (isZimo || w.discard !== null);
+// Re-render just the preview and confirm button without full modal re-render
+const g = S.game;
+const w = S.winInput;
+const preview = buildPreview(g, w);
+const isZimo = w.type === 'zimo';
+const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
+const canConfirm = allFansSet && w.winners.length > 0 && (isZimo || w.discard !== null);
 
-  // Update fan display numbers
-  w.winners.forEach(wi => {
-    const numEl = document.getElementById(`fan-num-${wi}`);
-    if (numEl) numEl.textContent = w.fans[wi] || 1;
-  });
+// Update fan display numbers
+w.winners.forEach(wi => {
+const numEl = document.getElementById(`fan-num-${wi}`);
+if (numEl) numEl.textContent = w.fans[wi] || 1;
+});
 
-  const previewEl = document.getElementById('win-preview');
-  const confirmEl = document.getElementById('win-confirm');
-  if (!previewEl || !confirmEl) return;
+const previewEl = document.getElementById('win-preview');
+const confirmEl = document.getElementById('win-confirm');
+if (!previewEl || !confirmEl) return;
 
-  if (preview) {
-    const eventLines = preview.events.map(ev => {
-      const wn = g.players[ev.winner].name;
-      const ln = g.players[ev.loser].name;
-      const typeLabel = ev.isZimo ? '自摸' : '食糊';
-      const dealerPart = ev.dealerBonusPay > 0 ? ` + ${ev.dealerBonusPay}番連莊` : '';
-      if (ev.type==='normal') return `<div class="preview-row"><span>${wn}←${ln}</span><span>5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
-      if (ev.type==='拉') return `<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${ev.cumulative - ev.total}×0.5)=${ev.pullBonus}拉 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
-      if (ev.type==='剪') return `<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${ev.prevCumulative}×0.5)=${ev.clawback}番剪 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
-      return '';
-    }).join('');
-    const payLines = preview.payments.map((pay,i)=>pay!==0?`<div class="preview-row preview-total"><span>${g.players[i].emoji} ${g.players[i].name}</span><span style="color:${pay>0?'var(--green)':'var(--red)'}">${pay>0?'+':''}$${pay*preview.unit}</span></div>`:'').join('');
-    previewEl.innerHTML = eventLines + `<div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">${payLines}</div>`;
-    previewEl.style.color = '';
-  } else {
-    previewEl.innerHTML = '選擇番數後顯示計算';
-    previewEl.style.color = 'var(--text3)';
-  }
-  confirmEl.disabled = !canConfirm;
+if (preview) {
+const eventLines = preview.events.map(ev => {
+const wn = g.players[ev.winner].name;
+const ln = g.players[ev.loser].name;
+const typeLabel = ev.isZimo ? '自摸' : '食糊';
+const dealerPart = ev.dealerBonusPay > 0 ? ` + ${ev.dealerBonusPay}番連莊` : '';
+if (ev.type==='normal') return `<div class="preview-row"><span>${wn}←${ln}</span><span>5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+if (ev.type==='拉') return `<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${ev.cumulative - ev.total}×0.5)=${ev.pullBonus}拉 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+if (ev.type==='剪') return `<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${ev.prevCumulative}×0.5)=${ev.clawback}番剪 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+return '';
+}).join('');
+const payLines = preview.payments.map((pay,i)=>pay!==0?`<div class="preview-row preview-total"><span>${g.players[i].emoji} ${g.players[i].name}</span><span style="color:${pay>0?'var(--green)':'var(--red)'}">${pay>0?'+':''}$${pay*preview.unit}</span></div>`:'').join('');
+previewEl.innerHTML = eventLines + `<div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">${payLines}</div>`;
+previewEl.style.color = '';
+} else {
+previewEl.innerHTML = '選擇番數後顯示計算';
+previewEl.style.color = 'var(--text3)';
+}
+confirmEl.disabled = !canConfirm;
 }
 
 function openWinModal() {
-  document.getElementById('winModal').classList.add('open');
-  renderWinModal();
+document.getElementById('winModal').classList.add('open');
+renderWinModal();
 }
 function closeWinModal() {
-  document.getElementById('winModal').classList.remove('open');
+document.getElementById('winModal').classList.remove('open');
 }
 
 // ── 埋單 modal ────────────────────────────────────────────────────────────────
 function openMaidanModal(autoTriggered) {
-  document.getElementById('maidanModal').classList.add('open');
-  renderMaidanModal(autoTriggered);
+document.getElementById('maidanModal').classList.add('open');
+renderMaidanModal(autoTriggered);
 }
 function closeMaidanModal() { document.getElementById('maidanModal').classList.remove('open'); }
 
 function renderMaidanModal(autoTriggered) {
-  const g = S.game;
-  const allPlayers = [...g.players, ...(g.bench||[])];
-  const total = allPlayers.reduce((s,p)=>s+p.score, 0);
+const g = S.game;
+const allPlayers = [...g.players, ...(g.bench||[])];
+const total = allPlayers.reduce((s,p)=>s+p.score, 0);
 
-  document.getElementById('maidanSheetContent').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div class="modal-title">💰 埋單</div>
-      <button onclick="closeMaidanModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">關閉</button>
-    </div>
-    ${autoTriggered?`<div style="background:#fff7ed;border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px;font-size:13px;color:var(--orange);font-weight:500">🎉 一局完成！</div>`:''}
-    <div class="modal-sub">第${g.round-1}局完 · ${WINDS[(g.windRound-1+4)%4]}圈結束</div>
-    ${allPlayers.map(p=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--bg2)">
-      <span style="font-size:22px">${p.emoji}</span>
-      <div style="flex:1">
-        <div style="font-size:14px;font-weight:600">${esc(p.name)}</div>
-        ${(g.bench||[]).find(b=>b.name===p.name)?`<div style="font-size:10px;color:var(--text3)">已離座</div>`:''}
-      </div>
-      <div style="font-size:22px;font-weight:900;color:${p.score>0?'var(--green)':p.score<0?'var(--red)':'var(--text3)'}">${p.score>0?'+':''}$${p.score}</div>
-    </div>`).join('')}
-    <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:13px;color:var(--text3)">
-      <span>合計</span><span style="color:${total===0?'var(--green)':'var(--red)'}">$${total}</span>
-    </div>
-    <button class="confirm-btn" onclick="closeMaidanModal()" style="background:var(--tab-active)">繼續遊戲</button>
-  `;
+document.getElementById('maidanSheetContent').innerHTML = `
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+     <div class="modal-title">💰 埋單</div>
+     <button onclick="closeMaidanModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">關閉</button>
+   </div>
+   ${autoTriggered?`<div style="background:#fff7ed;border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px;font-size:13px;color:var(--orange);font-weight:500">🎉 一局完成！</div>`:''}
+   <div class="modal-sub">第${g.round-1}局完 · ${WINDS[(g.windRound-1+4)%4]}圈結束</div>
+   ${allPlayers.map(p=>`
+   <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--bg2)">
+     <span style="font-size:22px">${p.emoji}</span>
+     <div style="flex:1">
+       <div style="font-size:14px;font-weight:600">${esc(p.name)}</div>
+       ${(g.bench||[]).find(b=>b.name===p.name)?`<div style="font-size:10px;color:var(--text3)">已離座</div>`:''}
+     </div>
+     <div style="font-size:22px;font-weight:900;color:${p.score>0?'var(--green)':p.score<0?'var(--red)':'var(--text3)'}">${p.score>0?'+':''}$${p.score}</div>
+   </div>`).join('')}
+   <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:13px;color:var(--text3)">
+     <span>合計</span><span style="color:${total===0?'var(--green)':'var(--red)'}">$${total}</span>
+   </div>
+   <button class="confirm-btn" onclick="closeMaidanModal()" style="background:var(--tab-active)">繼續遊戲</button>
+ `;
 }
 
 // ── 詐胡 modal ────────────────────────────────────────────────────────────────
 function openZhaHuModal(preselect) {
-  S.zhaHuPayer = (preselect !== undefined) ? preselect : null;
-  document.getElementById('zhaHuModal').classList.add('open');
-  renderZhaHuModal();
+S.zhaHuPayer = (preselect !== undefined) ? preselect : null;
+document.getElementById('zhaHuModal').classList.add('open');
+renderZhaHuModal();
 }
 function closeZhaHuModal() { document.getElementById('zhaHuModal').classList.remove('open'); }
 
 function renderZhaHuModal() {
-  const g = S.game;
-  const n = g.dealerStreak;
-  const bonus = 2*n+1;
-  const payerIdx = S.zhaHuPayer;
-  const unit = g.unitHu || g.unit || 1;
-  const ZHA_FAN = 30;
+const g = S.game;
+const n = g.dealerStreak;
+const bonus = 2*n+1;
+const payerIdx = S.zhaHuPayer;
+const unit = g.unitHu || g.unit || 1;
+const ZHA_FAN = 30;
 
-  // Build preview if payer selected
-  let previewHtml = '';
-  if (payerIdx !== null && payerIdx !== undefined) {
-    const chains = g.chains || {};
-    const currentWinners = g.currentWinners || [];
-    const dealer = g.dealer;
-    let previewLines = [];
-    let total = 0;
-    for (let wIdx = 0; wIdx < 4; wIdx++) {
-      if (wIdx === payerIdx) continue;
-      const pairKey = `${wIdx}-${payerIdx}`;
-      const reverseKey = `${payerIdx}-${wIdx}`;
-      const winnerIsDealer = wIdx === dealer;
-      const loserIsDealer = payerIdx === dealer;
-      const dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
-      let basePay = ZHA_FAN + dealerBonusPay;
-      const prevCumulative = chainCum(chains[pairKey]);
-      const reverseCumulative = chainCum(chains[reverseKey]);
-      let thisPay = basePay;
-      const wn = g.players[wIdx].name;
-      const ln = g.players[payerIdx].name;
-      const dealerPart = dealerBonusPay > 0 ? ` + ${dealerBonusPay}番連莊` : '';
-      if (reverseCumulative > 0 && currentWinners.includes(payerIdx)) {
-        const clawback = Math.floor(reverseCumulative * 0.5);
-        thisPay = basePay + clawback;
-        previewLines.push(`<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${reverseCumulative}×0.5)=${clawback}剪 + ${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
-      } else if (prevCumulative > 0 && currentWinners.includes(wIdx)) {
-        const pullBonus = Math.floor(prevCumulative * 0.5);
-        thisPay = basePay + pullBonus;
-        previewLines.push(`<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${prevCumulative}×0.5)=${pullBonus}拉 + ${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
-      } else {
-        previewLines.push(`<div class="preview-row"><span>${wn}←${ln}</span><span>${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
-      }
-      total += thisPay;
-    }
-    previewHtml = `<div class="preview-bar">
-      ${previewLines.join('')}
-      <div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">
-        <div class="preview-row preview-total"><span>${g.players[payerIdx].emoji} ${g.players[payerIdx].name} 總付</span><span style="color:var(--red)">-$${total*unit}</span></div>
-      </div>
-    </div>`;
-  }
+// Build preview if payer selected
+let previewHtml = '';
+if (payerIdx !== null && payerIdx !== undefined) {
+const chains = g.chains || {};
+const currentWinners = g.currentWinners || [];
+const dealer = g.dealer;
+let previewLines = [];
+let total = 0;
+for (let wIdx = 0; wIdx < 4; wIdx++) {
+if (wIdx === payerIdx) continue;
+const pairKey = `${wIdx}-${payerIdx}`;
+const reverseKey = `${payerIdx}-${wIdx}`;
+const winnerIsDealer = wIdx === dealer;
+const loserIsDealer = payerIdx === dealer;
+const dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
+let basePay = ZHA_FAN + dealerBonusPay;
+const prevCumulative = chainCum(chains[pairKey]);
+const reverseCumulative = chainCum(chains[reverseKey]);
+let thisPay = basePay;
+const wn = g.players[wIdx].name;
+const ln = g.players[payerIdx].name;
+const dealerPart = dealerBonusPay > 0 ? ` + ${dealerBonusPay}番連莊` : '';
+if (reverseCumulative > 0 && currentWinners.includes(payerIdx)) {
+const clawback = Math.floor(reverseCumulative * 0.5);
+thisPay = basePay + clawback;
+previewLines.push(`<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${reverseCumulative}×0.5)=${clawback}剪 + ${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
+} else if (prevCumulative > 0 && currentWinners.includes(wIdx)) {
+const pullBonus = Math.floor(prevCumulative * 0.5);
+thisPay = basePay + pullBonus;
+previewLines.push(`<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${prevCumulative}×0.5)=${pullBonus}拉 + ${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
+} else {
+previewLines.push(`<div class="preview-row"><span>${wn}←${ln}</span><span>${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
+}
+total += thisPay;
+}
+previewHtml = `<div class="preview-bar">
+     ${previewLines.join('')}
+     <div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">
+       <div class="preview-row preview-total"><span>${g.players[payerIdx].emoji} ${g.players[payerIdx].name} 總付</span><span style="color:var(--red)">-$${total*unit}</span></div>
+     </div>
+   </div>`;
+}
 
-  document.getElementById('zhaHuSheetContent').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div class="modal-title" style="color:var(--red)">詐胡</div>
-      <button onclick="closeZhaHuModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
-    </div>
-    <div class="modal-sub">30番 + 連莊${bonus}番 · 按出銃$${unit}/番</div>
-    <div class="modal-section">詐胡者</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      ${g.players.map((p,i)=>`<button class="type-btn ${payerIdx===i?'sel':''}" onclick="setZhaHuPayer(${i})">
-        ${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}
-      </button>`).join('')}
-    </div>
-    ${previewHtml || `<div class="preview-bar" style="color:var(--text3);font-size:13px">選擇詐胡者後顯示計算</div>`}
-    <button class="confirm-btn" style="background:var(--red)" ${payerIdx===null||payerIdx===undefined?'disabled':''} onclick="confirmZhaHu()">確認詐胡</button>
-  `;
+document.getElementById('zhaHuSheetContent').innerHTML = `
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+     <div class="modal-title" style="color:var(--red)">詐胡</div>
+     <button onclick="closeZhaHuModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
+   </div>
+   <div class="modal-sub">30番 + 連莊${bonus}番 · 按出銃$${unit}/番</div>
+   <div class="modal-section">詐胡者</div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+     ${g.players.map((p,i)=>`<button class="type-btn ${payerIdx===i?'sel':''}" onclick="setZhaHuPayer(${i})">
+       ${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}
+     </button>`).join('')}
+   </div>
+   ${previewHtml || `<div class="preview-bar" style="color:var(--text3);font-size:13px">選擇詐胡者後顯示計算</div>`}
+   <button class="confirm-btn" style="background:var(--red)" ${payerIdx===null||payerIdx===undefined?'disabled':''} onclick="confirmZhaHu()">確認詐胡</button>
+ `;
 }
 
 function setZhaHuPayer(i) { S.zhaHuPayer = i; renderZhaHuModal(); }
 
 function confirmZhaHu() {
-  const payerIdx = S.zhaHuPayer;
-  if (payerIdx === null || payerIdx === undefined) return;
-  saveWithUndo(applyZhaHu(S.game, payerIdx));
-  closeZhaHuModal();
-  renderTab();
+const payerIdx = S.zhaHuPayer;
+if (payerIdx === null || payerIdx === undefined) return;
+saveWithUndo(applyZhaHu(S.game, payerIdx));
+closeZhaHuModal();
+renderTab();
 }
 
 // ── 獎罰 modal ────────────────────────────────────────────────────────────────
 function openPenaltyModal(preselect) {
-  S.penaltyInput = { payer: (preselect !== undefined) ? preselect : null, receiver:'all', di:1, dir:'pay' };
-  document.getElementById('penaltyModal').classList.add('open');
-  renderPenaltyModal();
+S.penaltyInput = { payer: (preselect !== undefined) ? preselect : null, receiver:'all', di:1, dir:'pay' };
+document.getElementById('penaltyModal').classList.add('open');
+renderPenaltyModal();
 }
 function closePenaltyModal() { document.getElementById('penaltyModal').classList.remove('open'); }
 
 function renderPenaltyModal() {
-  const g = S.game;
-  const pi = S.penaltyInput;
-  const fan = pi.di * 5;
-  const unit = g.unitHu || g.unit || 1;
-  const isPay = pi.dir === 'pay';
-  const canConfirm = pi.receiver !== null;
+const g = S.game;
+const pi = S.penaltyInput;
+const fan = pi.di * 5;
+const unit = g.unitHu || g.unit || 1;
+const isPay = pi.dir === 'pay';
+const canConfirm = pi.receiver !== null;
 
-  // Preview
-  let previewHtml = '';
-  if (canConfirm) {
-    const others = pi.receiver === 'all' ? [0,1,2,3].filter(i=>i!==pi.payer) : [pi.receiver];
-    const subjectTotal = others.length * fan * unit;
-    const subjectName = g.players[pi.payer].name;
-    previewHtml = `<div class="preview-bar">
-      <div class="preview-row"><span>${subjectName} ${isPay?'付':'收'}</span><span>${fan}番 × ${others.length}人 = ${others.length*fan}番</span></div>
-      <div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">
-        <div class="preview-row preview-total"><span>${g.players[pi.payer].emoji} ${subjectName}</span><span style="color:${isPay?'var(--red)':'var(--green)'}">${isPay?'-':'+'}$${subjectTotal}</span></div>
-        ${others.map(o=>`<div class="preview-row preview-total"><span>${g.players[o].emoji} ${g.players[o].name}</span><span style="color:${isPay?'var(--green)':'var(--red)'}">${isPay?'+':'-'}$${fan*unit}</span></div>`).join('')}
-      </div>
-    </div>`;
-  }
+// Preview
+let previewHtml = '';
+if (canConfirm) {
+const others = pi.receiver === 'all' ? [0,1,2,3].filter(i=>i!==pi.payer) : [pi.receiver];
+const subjectTotal = others.length * fan * unit;
+const subjectName = g.players[pi.payer].name;
+previewHtml = `<div class="preview-bar">
+     <div class="preview-row"><span>${subjectName} ${isPay?'付':'收'}</span><span>${fan}番 × ${others.length}人 = ${others.length*fan}番</span></div>
+     <div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">
+       <div class="preview-row preview-total"><span>${g.players[pi.payer].emoji} ${subjectName}</span><span style="color:${isPay?'var(--red)':'var(--green)'}">${isPay?'-':'+'}$${subjectTotal}</span></div>
+       ${others.map(o=>`<div class="preview-row preview-total"><span>${g.players[o].emoji} ${g.players[o].name}</span><span style="color:${isPay?'var(--green)':'var(--red)'}">${isPay?'+':'-'}$${fan*unit}</span></div>`).join('')}
+     </div>
+   </div>`;
+}
 
-  document.getElementById('penaltySheetContent').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div class="modal-title" style="color:var(--orange)">${g.players[pi.payer].emoji} ${esc(g.players[pi.payer].name)} 獎罰</div>
-      <button onclick="closePenaltyModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
-    </div>
-    <div class="modal-sub">按$${unit}/番</div>
+document.getElementById('penaltySheetContent').innerHTML = `
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+     <div class="modal-title" style="color:var(--orange)">${g.players[pi.payer].emoji} ${esc(g.players[pi.payer].name)} 獎罰</div>
+     <button onclick="closePenaltyModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
+   </div>
+   <div class="modal-sub">按$${unit}/番</div>
 
-    <div class="modal-section">方向</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <button class="type-btn ${isPay?'sel':''}" onclick="setPenaltyDir('pay')">付</button>
-      <button class="type-btn ${!isPay?'sel':''}" onclick="setPenaltyDir('collect')">收</button>
-    </div>
+   <div class="modal-section">方向</div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+     <button class="type-btn ${isPay?'sel':''}" onclick="setPenaltyDir('pay')">付</button>
+     <button class="type-btn ${!isPay?'sel':''}" onclick="setPenaltyDir('collect')">收</button>
+   </div>
 
-    <div class="modal-section">底數</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <button class="type-btn ${pi.di===1?'sel':''}" onclick="setPenaltyDi(1)">1底 (5番)</button>
-      <button class="type-btn ${pi.di===2?'sel':''}" onclick="setPenaltyDi(2)">2底 (10番)</button>
-    </div>
+   <div class="modal-section">底數</div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+     <button class="type-btn ${pi.di===1?'sel':''}" onclick="setPenaltyDi(1)">1底 (5番)</button>
+     <button class="type-btn ${pi.di===2?'sel':''}" onclick="setPenaltyDi(2)">2底 (10番)</button>
+   </div>
 
-    <div class="modal-section">${isPay?'收款者':'付款者'}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <button class="type-btn ${pi.receiver==='all'?'sel':''}" onclick="setPenaltyReceiver('all')">所有人</button>
-      ${g.players.map((p,i)=>pi.payer===i?'':
-        `<button class="type-btn ${pi.receiver===i?'sel':''}" onclick="setPenaltyReceiver(${i})">${p.emoji} ${esc(p.name)}</button>`
-      ).join('')}
-    </div>
+   <div class="modal-section">${isPay?'收款者':'付款者'}</div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+     <button class="type-btn ${pi.receiver==='all'?'sel':''}" onclick="setPenaltyReceiver('all')">所有人</button>
+     ${g.players.map((p,i)=>pi.payer===i?'':
+       `<button class="type-btn ${pi.receiver===i?'sel':''}" onclick="setPenaltyReceiver(${i})">${p.emoji} ${esc(p.name)}</button>`
+     ).join('')}
+   </div>
 
-    ${previewHtml || `<div class="preview-bar" style="color:var(--text3);font-size:13px">選擇後顯示計算</div>`}
-    <button class="confirm-btn" ${!canConfirm?'disabled':''} onclick="confirmPenalty()" style="background:var(--orange)">確認獎罰</button>
-  `;
+   ${previewHtml || `<div class="preview-bar" style="color:var(--text3);font-size:13px">選擇後顯示計算</div>`}
+   <button class="confirm-btn" ${!canConfirm?'disabled':''} onclick="confirmPenalty()" style="background:var(--orange)">確認獎罰</button>
+ `;
 }
 
 function setPenaltyPayer(i) { S.penaltyInput.payer=i; if(S.penaltyInput.receiver===i) S.penaltyInput.receiver='all'; renderPenaltyModal(); }
@@ -1358,177 +1375,177 @@ function setPenaltyReceiver(r) { S.penaltyInput.receiver=r; renderPenaltyModal()
 function setPenaltyDir(d) { S.penaltyInput.dir=d; renderPenaltyModal(); }
 
 function confirmPenalty() {
-  const pi = S.penaltyInput;
-  if (pi.payer === null) return;
-  saveWithUndo(applyPenalty(S.game, pi.payer, pi.receiver, pi.di, pi.dir));
-  closePenaltyModal();
-  renderTab();
+const pi = S.penaltyInput;
+if (pi.payer === null) return;
+saveWithUndo(applyPenalty(S.game, pi.payer, pi.receiver, pi.di, pi.dir));
+closePenaltyModal();
+renderTab();
 }
 
 // ── Swap player ───────────────────────────────────────────────────────────────
 function openSwapModal() {
-  S.swapInput = { seatIdx: null, newPlayer: null };
-  document.getElementById('swapModal').classList.add('open');
-  renderSwapModal();
+S.swapInput = { seatIdx: null, newPlayer: null };
+document.getElementById('swapModal').classList.add('open');
+renderSwapModal();
 }
 function closeSwapModal() { document.getElementById('swapModal').classList.remove('open'); }
 
 function renderSwapModal() {
-  const g = S.game;
-  const sw = S.swapInput;
-  const currentNames = g.players.map(p=>p.name);
-  // All profiles + bench players (previously swapped out) not currently seated
-  const bench = (g.bench||[]);
-  const available = [
-    ...S.profiles.filter(p=>!currentNames.includes(p.name)),
-    ...bench.filter(p=>!currentNames.includes(p.name) && !S.profiles.find(pr=>pr.name===p.name))
-  ];
+const g = S.game;
+const sw = S.swapInput;
+const currentNames = g.players.map(p=>p.name);
+// All profiles + bench players (previously swapped out) not currently seated
+const bench = (g.bench||[]);
+const available = [
+...S.profiles.filter(p=>!currentNames.includes(p.name)),
+...bench.filter(p=>!currentNames.includes(p.name) && !S.profiles.find(pr=>pr.name===p.name))
+];
 
-  document.getElementById('swapSheetContent').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div class="modal-title">⇄ 換人</div>
-      <button onclick="closeSwapModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
-    </div>
-    <div class="modal-sub">換出玩家的鏈條將中斷，新玩家從 $0 開始</div>
+document.getElementById('swapSheetContent').innerHTML = `
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+     <div class="modal-title">⇄ 換人</div>
+     <button onclick="closeSwapModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
+   </div>
+   <div class="modal-sub">換出玩家的鏈條將中斷，新玩家從 $0 開始</div>
 
-    <div class="modal-section">換出哪位</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      ${g.players.map((p,i)=>`<button class="type-btn ${sw.seatIdx===i?'sel':''}" onclick="setSwapSeat(${i})">
-        ${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}
-        <div style="font-size:10px;color:${p.score>=0?'var(--green)':'var(--red)'};font-weight:700">${p.score>=0?'+':''}$${p.score}</div>
-      </button>`).join('')}
-    </div>
+   <div class="modal-section">換出哪位</div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+     ${g.players.map((p,i)=>`<button class="type-btn ${sw.seatIdx===i?'sel':''}" onclick="setSwapSeat(${i})">
+       ${p.emoji} ${esc(p.name)}${i===g.dealer?' 莊':''}
+       <div style="font-size:10px;color:${p.score>=0?'var(--green)':'var(--red)'};font-weight:700">${p.score>=0?'+':''}$${p.score}</div>
+     </button>`).join('')}
+   </div>
 
-    <div class="modal-section">換入哪位</div>
-    ${available.length===0?`<div style="color:var(--text3);font-size:13px;padding:8px 0">所有牌友均在座</div>`:''}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-      ${available.map(p=>`<button class="type-btn ${sw.newPlayer===p.name?'sel':''}" onclick="setSwapNew('${esc(p.name)}')">
-        ${p.emoji} ${esc(p.name)}
-        ${bench.find(b=>b.name===p.name)?`<div style="font-size:10px;color:${bench.find(b=>b.name===p.name).score>=0?'var(--green)':'var(--red)'};font-weight:700">${bench.find(b=>b.name===p.name).score>=0?'+':''}$${bench.find(b=>b.name===p.name).score}</div>`:''}
-      </button>`).join('')}
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <input id="swapTempName" class="unit-input" type="text" placeholder="或輸入新牌友名字" style="flex:1;margin:0">
-      <button onclick="setSwapNewTemp()" style="background:var(--tab-active);color:#fff;border:none;border-radius:var(--radius-sm);padding:0 12px;font-size:13px;font-family:'Noto Sans TC',sans-serif;cursor:pointer">選擇</button>
-    </div>
+   <div class="modal-section">換入哪位</div>
+   ${available.length===0?`<div style="color:var(--text3);font-size:13px;padding:8px 0">所有牌友均在座</div>`:''}
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+     ${available.map(p=>`<button class="type-btn ${sw.newPlayer===p.name?'sel':''}" onclick="setSwapNew('${esc(p.name)}')">
+       ${p.emoji} ${esc(p.name)}
+       ${bench.find(b=>b.name===p.name)?`<div style="font-size:10px;color:${bench.find(b=>b.name===p.name).score>=0?'var(--green)':'var(--red)'};font-weight:700">${bench.find(b=>b.name===p.name).score>=0?'+':''}$${bench.find(b=>b.name===p.name).score}</div>`:''}
+     </button>`).join('')}
+   </div>
+   <div style="display:flex;gap:8px;margin-bottom:12px">
+     <input id="swapTempName" class="unit-input" type="text" placeholder="或輸入新牌友名字" style="flex:1;margin:0">
+     <button onclick="setSwapNewTemp()" style="background:var(--tab-active);color:#fff;border:none;border-radius:var(--radius-sm);padding:0 12px;font-size:13px;font-family:'Noto Sans TC',sans-serif;cursor:pointer">選擇</button>
+   </div>
 
-    <button class="confirm-btn" ${sw.seatIdx===null||!sw.newPlayer?'disabled':''} onclick="confirmSwap()">確認換人</button>
-  `;
+   <button class="confirm-btn" ${sw.seatIdx===null||!sw.newPlayer?'disabled':''} onclick="confirmSwap()">確認換人</button>
+ `;
 }
 
 function setSwapSeat(i) { S.swapInput.seatIdx=i; renderSwapModal(); }
 function setSwapNew(name) { S.swapInput.newPlayer=name; renderSwapModal(); }
 function setSwapNewTemp() {
-  const n = document.getElementById('swapTempName')?.value?.trim();
-  if (!n) return;
-  S.swapInput.newPlayer = n;
-  renderSwapModal();
+const n = document.getElementById('swapTempName')?.value?.trim();
+if (!n) return;
+S.swapInput.newPlayer = n;
+renderSwapModal();
 }
 
 function confirmSwap() {
-  const sw = S.swapInput;
-  if (sw.seatIdx === null || !sw.newPlayer) return;
-  const g = S.game;
-  const outPlayer = { ...g.players[sw.seatIdx] };
-  const bench = [...(g.bench||[])];
+const sw = S.swapInput;
+if (sw.seatIdx === null || !sw.newPlayer) return;
+const g = S.game;
+const outPlayer = { ...g.players[sw.seatIdx] };
+const bench = [...(g.bench||[])];
 
-  // Add outgoing player to bench (or update if already there)
-  const existingBench = bench.findIndex(p=>p.name===outPlayer.name);
-  if (existingBench >= 0) bench[existingBench] = outPlayer;
-  else bench.push(outPlayer);
+// Add outgoing player to bench (or update if already there)
+const existingBench = bench.findIndex(p=>p.name===outPlayer.name);
+if (existingBench >= 0) bench[existingBench] = outPlayer;
+else bench.push(outPlayer);
 
-  // Find incoming player — from bench, profiles, or new
-  const fromBench = bench.find(p=>p.name===sw.newPlayer);
-  const fromProfile = S.profiles.find(p=>p.name===sw.newPlayer);
-  const emoji = fromBench?.emoji || fromProfile?.emoji || '👤';
-  const inPlayer = fromBench
-    ? { ...fromBench } // brings back their score
-    : { name:sw.newPlayer, emoji, score:0, wins:0, losses:0, huWins:0, zimoWins:0, shots:0 };
+// Find incoming player — from bench, profiles, or new
+const fromBench = bench.find(p=>p.name===sw.newPlayer);
+const fromProfile = S.profiles.find(p=>p.name===sw.newPlayer);
+const emoji = fromBench?.emoji || fromProfile?.emoji || '👤';
+const inPlayer = fromBench
+? { ...fromBench } // brings back their score
+: { name:sw.newPlayer, emoji, score:0, wins:0, losses:0, huWins:0, zimoWins:0, shots:0 };
 
-  // Remove incoming player from bench if they were there
-  const newBench = bench.filter(p=>p.name!==sw.newPlayer);
+// Remove incoming player from bench if they were there
+const newBench = bench.filter(p=>p.name!==sw.newPlayer);
 
-  // Clear all chains involving the swapped seat
-  const newChains = {};
-  Object.entries(g.chains||{}).forEach(([key, val]) => {
-    const [w,l] = key.split('-').map(Number);
-    if (w !== sw.seatIdx && l !== sw.seatIdx) newChains[key] = val;
-  });
+// Clear all chains involving the swapped seat
+const newChains = {};
+Object.entries(g.chains||{}).forEach(([key, val]) => {
+const [w,l] = key.split('-').map(Number);
+if (w !== sw.seatIdx && l !== sw.seatIdx) newChains[key] = val;
+});
 
-  // Clear currentWinners if outgoing player was a winner
-  const newCurrentWinners = (g.currentWinners||[]).filter(i=>i!==sw.seatIdx);
+// Clear currentWinners if outgoing player was a winner
+const newCurrentWinners = (g.currentWinners||[]).filter(i=>i!==sw.seatIdx);
 
-  const newPlayers = [...g.players];
-  newPlayers[sw.seatIdx] = inPlayer;
+const newPlayers = [...g.players];
+newPlayers[sw.seatIdx] = inPlayer;
 
-  const desc = `${outPlayer.name} → ${sw.newPlayer} (座位${sw.seatIdx+1})`;
-  const log = { type:'換人', desc, payments:[0,0,0,0], unit:g.unitHu||1, round:g.round, events:[], dealer:g.dealer, dealerStreak:g.dealerStreak };
+const desc = `${outPlayer.name} → ${sw.newPlayer} (座位${sw.seatIdx+1})`;
+const log = { type:'換人', desc, payments:[0,0,0,0], unit:g.unitHu||1, round:g.round, events:[], dealer:g.dealer, dealerStreak:g.dealerStreak };
 
-  const newGame = { ...g, players:newPlayers, bench:newBench, chains:newChains, currentWinners:newCurrentWinners, log:[log,...g.log] };
-  saveWithUndo(newGame);
-  closeSwapModal();
-  renderTab();
+const newGame = { ...g, players:newPlayers, bench:newBench, chains:newChains, currentWinners:newCurrentWinners, log:[log,...g.log] };
+saveWithUndo(newGame);
+closeSwapModal();
+renderTab();
 }
 
 // ── Edit profile modal ────────────────────────────────────────────────────────
 function openEditProfile(idx) {
-  S.editingProfile = idx;
-  S.editEmoji = idx===null ? EMOJIS[Math.floor(Math.random()*EMOJIS.length)] : S.profiles[idx].emoji;
-  S.view = 'editProfile';
-  render();
+S.editingProfile = idx;
+S.editEmoji = idx===null ? EMOJIS[Math.floor(Math.random()*EMOJIS.length)] : S.profiles[idx].emoji;
+S.view = 'editProfile';
+render();
 }
 
 // ── Live Session ──────────────────────────────────────────────────────────────
 function openLiveModal() {
-  document.getElementById('liveModal').classList.add('open');
-  renderLiveModal('idle');
+document.getElementById('liveModal').classList.add('open');
+renderLiveModal('idle');
 }
 function closeLiveModal() { document.getElementById('liveModal').classList.remove('open'); }
 
 function renderLiveModal(state, msg) {
-  const code = S.liveCode;
-  const spectatorUrl = `${location.origin}${location.pathname}?watch=${code}`;
+const code = S.liveCode;
+const spectatorUrl = `${location.origin}${location.pathname}?watch=${code}`;
 
-  document.getElementById('liveContent').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div class="modal-title">📡 直播</div>
-      <button onclick="closeLiveModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">關閉</button>
-    </div>
+document.getElementById('liveContent').innerHTML = `
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+     <div class="modal-title">📡 直播</div>
+     <button onclick="closeLiveModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">關閉</button>
+   </div>
 
-    ${code ? `
-      <div style="background:#f0fdf4;border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;text-align:center">
-        <div style="font-size:11px;color:var(--text2);margin-bottom:6px">直播代碼 — 告訴朋友輸入此代碼</div>
-        <div style="font-size:48px;font-weight:900;letter-spacing:8px;color:#2d7a4f">${code}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:6px;word-break:break-all">${spectatorUrl}</div>
-      </div>
+   ${code ? `
+     <div style="background:#f0fdf4;border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;text-align:center">
+       <div style="font-size:11px;color:var(--text2);margin-bottom:6px">直播代碼 — 告訴朋友輸入此代碼</div>
+       <div style="font-size:48px;font-weight:900;letter-spacing:8px;color:#2d7a4f">${code}</div>
+       <div style="font-size:11px;color:var(--text3);margin-top:6px;word-break:break-all">${spectatorUrl}</div>
+     </div>
       <button onclick="copyLiveLink('${spectatorUrl}')" style="width:100%;padding:10px;border-radius:var(--radius-sm);border:1.5px solid #2d7a4f;background:var(--bg);color:#2d7a4f;font-size:14px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-bottom:8px">
         📋 複製邀請連結
       </button>
-      <div id="liveQR" style="display:flex;justify-content:center;margin-bottom:12px"></div>
-      <button class="confirm-btn" style="background:var(--red)" onclick="stopLive()">停止直播</button>
-    ` : `
-      <div class="modal-sub">開始直播後，朋友可以用代碼或掃描 QR 碼實時觀看比分</div>
-      ${state==='loading'?`<div style="text-align:center;padding:16px;color:var(--text2)">⏳ 建立直播中...</div>`:''}
-      ${state==='error'?`<div style="background:#fef2f2;border-radius:var(--radius-sm);padding:10px;color:var(--red);font-size:13px;margin-bottom:8px">❌ ${esc(msg||'錯誤')}</div>`:''}
-      <button class="confirm-btn" style="background:#2d7a4f" ${state==='loading'?'disabled':''} onclick="startLive()">開始直播</button>
-    `}
-  `;
+     <div id="liveQR" style="display:flex;justify-content:center;margin-bottom:12px"></div>
+     <button class="confirm-btn" style="background:var(--red)" onclick="stopLive()">停止直播</button>
+   ` : `
+     <div class="modal-sub">開始直播後，朋友可以用代碼或掃描 QR 碼實時觀看比分</div>
+     ${state==='loading'?`<div style="text-align:center;padding:16px;color:var(--text2)">⏳ 建立直播中...</div>`:''}
+     ${state==='error'?`<div style="background:#fef2f2;border-radius:var(--radius-sm);padding:10px;color:var(--red);font-size:13px;margin-bottom:8px">❌ ${esc(msg||'錯誤')}</div>`:''}
+     <button class="confirm-btn" style="background:#2d7a4f" ${state==='loading'?'disabled':''} onclick="startLive()">開始直播</button>
+   `}
+ `;
 
-  // Generate QR code if we have a code
-  if (code) {
-    setTimeout(() => {
-      const el = document.getElementById('liveQR');
-      if (el) {
-        el.innerHTML = generateQR(spectatorUrl);
-      }
-    }, 50);
-  }
+// Generate QR code if we have a code
+if (code) {
+setTimeout(() => {
+const el = document.getElementById('liveQR');
+if (el) {
+el.innerHTML = generateQR(spectatorUrl);
+}
+}, 50);
+}
 }
 
 function generateQR(text) {
-  // Simple QR using a free API
-  const encoded = encodeURIComponent(text);
-  return `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encoded}" style="border-radius:8px;border:4px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.1)">`;
+// Simple QR using a free API
+const encoded = encodeURIComponent(text);
+return `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encoded}" style="border-radius:8px;border:4px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.1)">`;
 }
 
 function leaveSpectator() {
@@ -1558,78 +1575,80 @@ function copyLiveLink(url) {
 }
 
 async function startLive() {
-  renderLiveModal('loading');
-  try {
-    // Generate a 4-digit code
-    const code = String(Math.floor(1000 + Math.random() * 9000));
-    const headers = {
-      'Content-Type': 'application/json',
-      'apikey': LIVE_KEY,
-      'Authorization': `Bearer ${LIVE_KEY}`,
-      'Prefer': 'return=representation',
-    };
-    // Create session row
-    const res = await fetch(`${LIVE_URL}/rest/v1/live_sessions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        session_code: code,
-        game_state: JSON.stringify(S.game),
-        updated_at: new Date().toISOString(),
-      }),
-    });
-    if (!res.ok) throw new Error(`建立失敗 (${res.status})`);
-    S.liveCode = code;
-    localStorage.setItem(LIVE_SESSION_KEY, code);
-    renderLiveModal('idle');
-    renderTab(); // update 直播中 indicator
-  } catch(e) {
-    renderLiveModal('error', e.message);
-  }
+renderLiveModal('loading');
+try {
+// Generate a 4-digit code
+const code = String(Math.floor(1000 + Math.random() * 9000));
+const headers = {
+'Content-Type': 'application/json',
+'apikey': LIVE_KEY,
+'Authorization': `Bearer ${LIVE_KEY}`,
+'Prefer': 'return=representation',
+};
+// Create session row
+const res = await fetch(`${LIVE_URL}/rest/v1/live_sessions`, {
+method: 'POST',
+headers,
+body: JSON.stringify({
+session_code: code,
+game_state: JSON.stringify(S.game),
+updated_at: new Date().toISOString(),
+}),
+});
+if (!res.ok) throw new Error(`建立失敗 (${res.status})`);
+S.liveCode = code;
+localStorage.setItem(LIVE_SESSION_KEY, code);
+renderLiveModal('idle');
+renderTab(); // update 直播中 indicator
+} catch(e) {
+renderLiveModal('error', e.message);
+}
 }
 
 async function stopLive() {
-  if (!S.liveCode) return;
-  const headers = {
-    'apikey': LIVE_KEY,
-    'Authorization': `Bearer ${LIVE_KEY}`,
-  };
-  // Delete session
-  await fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${S.liveCode}`, {
-    method: 'DELETE', headers,
-  }).catch(()=>{});
-  S.liveCode = null;
-  localStorage.removeItem(LIVE_SESSION_KEY);
-  closeLiveModal();
-  renderTab();
+if (!S.liveCode) return;
+const headers = {
+'apikey': LIVE_KEY,
+'Authorization': `Bearer ${LIVE_KEY}`,
+};
+// Delete session
+await fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${S.liveCode}`, {
+method: 'DELETE', headers,
+}).catch(()=>{});
+S.liveCode = null;
+localStorage.removeItem(LIVE_SESSION_KEY);
+closeLiveModal();
+renderTab();
 }
 
 async function pushLiveState() {
-  if (!S.liveCode || !S.game) return;
-  const headers = {
-    'Content-Type': 'application/json',
-    'apikey': LIVE_KEY,
-    'Authorization': `Bearer ${LIVE_KEY}`,
-  };
-  fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${S.liveCode}`, {
-    method: 'PATCH',
-    headers,
-    body: JSON.stringify({
-      game_state: JSON.stringify(S.game),
-      updated_at: new Date().toISOString(),
-    }),
-  }).catch(()=>{});
+if (!S.liveCode || !S.game) return;
+const headers = {
+'Content-Type': 'application/json',
+'apikey': LIVE_KEY,
+'Authorization': `Bearer ${LIVE_KEY}`,
+};
+fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${S.liveCode}`, {
+method: 'PATCH',
+headers,
+body: JSON.stringify({
+game_state: JSON.stringify(S.game),
+updated_at: new Date().toISOString(),
+}),
+}).catch(()=>{});
 }
 
 // ── Spectator mode ────────────────────────────────────────────────────────────
 function checkSpectatorMode() {
-  const params = new URLSearchParams(location.search);
-  const code = params.get('watch');
-  if (!code) return;
-  S.spectatorCode = code;
-  S.spectatorGame = null;
-  S.view = 'spectator';
-  subscribeSpectator(code);
+const params = new URLSearchParams(location.search);
+const code = params.get('watch');
+if (!code) return;
+  // Enter spectator mode
+S.spectatorCode = code;
+S.spectatorGame = null;
+S.view = 'spectator';
+  render();
+subscribeSpectator(code);
 }
 
 function promptWatchCode() {
@@ -1643,206 +1662,188 @@ function promptWatchCode() {
 }
 
 async function subscribeSpectator(code) {
-  // Poll every 3 seconds (simple approach, works without websocket config)
-  await fetchSpectatorState(code);
-  S.spectatorPoll = setInterval(() => fetchSpectatorState(code), 3000);
+// Poll every 3 seconds (simple approach, works without websocket config)
+await fetchSpectatorState(code);
+S.spectatorPoll = setInterval(() => fetchSpectatorState(code), 3000);
 }
 
 async function fetchSpectatorState(code) {
-  try {
-    const headers = { 'apikey': LIVE_KEY, 'Authorization': `Bearer ${LIVE_KEY}` };
-    const res = await fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${code}&select=game_state,updated_at`, { headers });
-    if (!res.ok) return;
-    const rows = await res.json();
-    if (!rows.length) {
-      document.getElementById('spectator-status').textContent = '找不到直播 ' + code;
-      return;
-    }
-    const gameState = JSON.parse(rows[0].game_state);
-    S.spectatorGame = gameState;
-    renderSpectatorView();
-  } catch(e) {}
+try {
+const headers = { 'apikey': LIVE_KEY, 'Authorization': `Bearer ${LIVE_KEY}` };
+const res = await fetch(`${LIVE_URL}/rest/v1/live_sessions?session_code=eq.${code}&select=game_state,updated_at`, { headers });
+if (!res.ok) return;
+const rows = await res.json();
+if (!rows.length) {
+document.getElementById('spectator-status').textContent = '找不到直播 ' + code;
+return;
+}
+const gameState = JSON.parse(rows[0].game_state);
+S.spectatorGame = gameState;
+renderSpectatorView();
+} catch(e) {}
 }
 
 function renderSpectatorView() {
-  const g = S.spectatorGame;
-  const tab = S.spectatorTab || 'game';
-
-  if (!g) {
-    document.getElementById('main-content').innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px">
-        <div style="font-size:32px">📡</div>
-        <div style="font-size:16px;font-weight:700">正在連接直播...</div>
-        <div style="font-size:13px;color:var(--text2)">代碼: ${S.spectatorCode}</div>
-        <button onclick="leaveSpectator()" style="padding:8px 20px;border:none;background:var(--bg2);border-radius:99px;font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 離開</button>
-      </div>`;
-    document.getElementById('tabbar').style.display = 'none';
-    return;
-  }
-
-  const round_wind = (g.windRound||0) % 4;
-  const windCircle = WINDS[round_wind]+'圈';
-  const windLabel = windCircle+WINDS[g.dealer]+'風';
-
-  // Show tabbar for spectator
-  const tb = document.getElementById('tabbar');
-  tb.style.display = 'flex';
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tab));
-
-  if (tab === 'game') {
-    const card = (idx) => {
-      const p = g.players[idx];
-      const isDealer = idx===g.dealer;
-      const sc = p.score;
-      const relWind = WINDS[(idx - g.dealer + 4) % 4];
-      return `<div class="player-card ${isDealer?'is-dealer':''}" style="cursor:default">
-        ${isDealer?`<div class="dealer-badge">莊</div>`:''}
-        <div class="player-emoji">${p.emoji}</div>
-        <div class="player-name">${esc(p.name)}</div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:3px">${windCircle}${relWind}位</div>
-        <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
-        ${isDealer&&g.dealerStreak>0?`<div style="font-size:10px;color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</div>`:''}
-      </div>`;
-    };
-    const latest = g.log && g.log[0];
-    document.getElementById('main-content').innerHTML = `
-      <div class="game-page">
-        <div class="round-info">
-          <div class="round-badge">
-            <span>👁</span><span class="arrow">›</span>
-            <span>${windLabel}</span><span class="arrow">›</span>
-            <span style="color:var(--text2)">第${g.round}局</span>
-            <span style="font-size:11px;color:var(--green)">● 直播</span>
-          </div>
-        </div>
-        <div class="cross-outer">
-          <div class="cross-card-wrap" style="grid-column:2;grid-row:1">${card(2)}</div>
-          <div class="cross-card-wrap-side" style="grid-column:1;grid-row:2">${card(3)}</div>
-          <div class="cross-center-col" style="grid-column:2;grid-row:2;align-self:center">
-            <div class="center-wind">${windLabel}</div>
-          </div>
-          <div class="cross-card-wrap-side" style="grid-column:3;grid-row:2">${card(1)}</div>
-          <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
-        </div>
-        ${latest?`<div style="font-size:13px;color:var(--text2);text-align:center;padding:6px 0">${esc(latest.desc||latest.type)}</div>`:''}
-        <div style="text-align:center;font-size:11px;color:var(--text3)">每3秒更新 · 代碼 ${S.spectatorCode}</div>
-      </div>`;
-  } else if (tab === 'stats') {
-    const savedGame = S.game; S.game = g;
-    document.getElementById('main-content').innerHTML = `<div style="overflow-y:auto;height:100%">${renderStatsTab()}</div>`;
-    S.game = savedGame;
-  } else if (tab === 'log') {
-    const savedGame = S.game; S.game = g;
-    document.getElementById('main-content').innerHTML = `<div style="overflow-y:auto;height:100%">${renderLogTab()}</div>`;
-    S.game = savedGame;
-  }
+const g = S.spectatorGame;
+if (!g) {
+document.getElementById('main-content').innerHTML = `
+     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px">
+       <div style="font-size:32px">📡</div>
+       <div style="font-size:16px;font-weight:700">正在連接直播...</div>
+       <div id="spectator-status" style="font-size:13px;color:var(--text2)">代碼: ${S.spectatorCode}</div>
+     </div>`;
+return;
 }
 
-function spectatorSwitchTab(t) {
-  S.spectatorTab = t;
-  renderSpectatorView();
+const round_wind = (g.windRound||0) % 4;
+const windCircle = WINDS[round_wind]+'圈';
+const windLabel = windCircle+WINDS[g.dealer]+'風';
+
+const card = (idx) => {
+const p = g.players[idx];
+const isDealer = idx===g.dealer;
+const sc = p.score;
+const relWind = WINDS[(idx - g.dealer + 4) % 4];
+return `<div class="player-card ${isDealer?'is-dealer':''}" style="cursor:default">
+     ${isDealer?`<div class="dealer-badge">莊</div>`:''}
+     <div class="player-emoji">${p.emoji}</div>
+     <div class="player-name">${esc(p.name)}</div>
+     <div style="font-size:11px;color:var(--text3);margin-bottom:3px">${windCircle}${relWind}位</div>
+     <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
+     ${isDealer&&g.dealerStreak>0?`<div style="font-size:10px;color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</div>`:''}
+   </div>`;
+};
+
+// Latest hand
+const latest = g.log && g.log[0];
+const latestDesc = latest ? `<div style="font-size:13px;color:var(--text2);text-align:center;padding:8px 0">${esc(latest.desc||latest.type)}</div>` : '';
+
+document.getElementById('main-content').innerHTML = `
+   <div class="game-page">
+     <div class="round-info">
+       <div class="round-badge">
+         <span>👁 觀看</span><span class="arrow">›</span>
+         <span>${windLabel}</span><span class="arrow">›</span>
+         <span style="color:var(--text2)">第${g.round}局</span>
+         <span style="font-size:11px;color:var(--green)">● 直播</span>
+       </div>
+     </div>
+     <div class="cross-outer">
+       <div class="cross-card-wrap" style="grid-column:2;grid-row:1">${card(2)}</div>
+       <div class="cross-card-wrap-side" style="grid-column:1;grid-row:2">${card(3)}</div>
+       <div class="cross-center-col" style="grid-column:2;grid-row:2;align-self:center">
+         <div class="center-wind">${windLabel}</div>
+       </div>
+       <div class="cross-card-wrap-side" style="grid-column:3;grid-row:2">${card(1)}</div>
+       <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
+     </div>
+     ${latestDesc}
+      <div style="text-align:center;font-size:11px;color:var(--text3);padding-bottom:8px">每3秒更新 · 代碼 ${S.spectatorCode}</div>
+      <div style="text-align:center;font-size:11px;color:var(--text3);padding-bottom:4px">每3秒更新 · 代碼 ${S.spectatorCode}</div>
+      <button onclick="leaveSpectator()" style="width:100%;padding:8px;border:none;background:none;color:var(--text3);font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 離開</button>
+   </div>`;
 }
 
 // ── Surrender (投降) ──────────────────────────────────────────────────────────
 function checkSurrenderPrompt() {
-  const g = S.game;
-  const chains = g.chains || {};
-  const unit = g.unitHu || g.unit || 1;
-  // Find all pairs where pulls is a multiple of 3
-  const eligible = [];
-  Object.entries(chains).forEach(([key, val]) => {
-    const pulls = chainPulls(val);
-    const cum = chainCum(val);
-    if (pulls > 0 && pulls % 3 === 0) {
-      const [wIdx, lIdx] = key.split('-').map(Number);
-      eligible.push({
-        key,
-        wIdx, lIdx,
-        pulls,
-        cumDollars: cum * unit,
-        wName: g.players[wIdx]?.name,
-        lName: g.players[lIdx]?.name,
-      });
-    }
-  });
-  if (eligible.length === 0) return;
-  S.surrenderEligible = eligible;
-  S.surrenderToggles = {}; // lIdx→boolean
-  document.getElementById('surrenderModal').classList.add('open');
-  renderSurrenderModal();
+const g = S.game;
+const chains = g.chains || {};
+const unit = g.unitHu || g.unit || 1;
+// Find all pairs where pulls is a multiple of 3
+const eligible = [];
+Object.entries(chains).forEach(([key, val]) => {
+const pulls = chainPulls(val);
+const cum = chainCum(val);
+if (pulls > 0 && pulls % 3 === 0) {
+const [wIdx, lIdx] = key.split('-').map(Number);
+eligible.push({
+key,
+wIdx, lIdx,
+pulls,
+cumDollars: cum * unit,
+wName: g.players[wIdx]?.name,
+lName: g.players[lIdx]?.name,
+});
+}
+});
+if (eligible.length === 0) return;
+S.surrenderEligible = eligible;
+S.surrenderToggles = {}; // lIdx→boolean
+document.getElementById('surrenderModal').classList.add('open');
+renderSurrenderModal();
 }
 
 function renderSurrenderModal() {
-  const g = S.game;
-  const eligible = S.surrenderEligible || [];
-  const toggles = S.surrenderToggles || {};
+const g = S.game;
+const eligible = S.surrenderEligible || [];
+const toggles = S.surrenderToggles || {};
 
-  document.getElementById('surrenderContent').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div class="modal-title" style="color:var(--orange)">投降選項</div>
-      <button onclick="closeSurrenderModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">跳過</button>
-    </div>
-    <div class="modal-sub">以下玩家已被拉 ${eligible[0]?.pulls} 次，可選擇投降</div>
-    ${eligible.map(e=>{
-      const loserPlayer = g.players[e.lIdx];
-      const winnerPlayer = g.players[e.wIdx];
-      const isSurrendering = !!toggles[e.key];
-      return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--bg2)">
-        <div style="flex:1">
-          <div style="font-size:14px;font-weight:700">${winnerPlayer?.emoji} ${esc(e.wName)} 拉 ${loserPlayer?.emoji} ${esc(e.lName)}</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px">累計 $${e.cumDollars} · 已拉 ${e.pulls} 次</div>
-        </div>
-        <button onclick="toggleSurrender('${e.key}')"
-          style="padding:8px 16px;border-radius:99px;border:2px solid ${isSurrendering?'var(--orange)':'var(--bg2)'};
-          background:${isSurrendering?'#fff7ed':'var(--bg)'};color:${isSurrendering?'var(--orange)':'var(--text2)'};
-          font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap">
-          ${isSurrendering?'✓ 投降':'投降'}
-        </button>
-      </div>`;
-    }).join('')}
-    <button class="confirm-btn" style="margin-top:8px" onclick="confirmSurrender()">確認</button>
-  `;
+document.getElementById('surrenderContent').innerHTML = `
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+     <div class="modal-title" style="color:var(--orange)">投降選項</div>
+     <button onclick="closeSurrenderModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">跳過</button>
+   </div>
+   <div class="modal-sub">以下玩家已被拉 ${eligible[0]?.pulls} 次，可選擇投降</div>
+   ${eligible.map(e=>{
+     const loserPlayer = g.players[e.lIdx];
+     const winnerPlayer = g.players[e.wIdx];
+     const isSurrendering = !!toggles[e.key];
+     return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--bg2)">
+       <div style="flex:1">
+         <div style="font-size:14px;font-weight:700">${winnerPlayer?.emoji} ${esc(e.wName)} 拉 ${loserPlayer?.emoji} ${esc(e.lName)}</div>
+         <div style="font-size:12px;color:var(--text2);margin-top:2px">累計 $${e.cumDollars} · 已拉 ${e.pulls} 次</div>
+       </div>
+       <button onclick="toggleSurrender('${e.key}')"
+         style="padding:8px 16px;border-radius:99px;border:2px solid ${isSurrendering?'var(--orange)':'var(--bg2)'};
+         background:${isSurrendering?'#fff7ed':'var(--bg)'};color:${isSurrendering?'var(--orange)':'var(--text2)'};
+         font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap">
+         ${isSurrendering?'✓ 投降':'投降'}
+       </button>
+     </div>`;
+   }).join('')}
+   <button class="confirm-btn" style="margin-top:8px" onclick="confirmSurrender()">確認</button>
+ `;
 }
 
 function toggleSurrender(key) {
-  S.surrenderToggles[key] = !S.surrenderToggles[key];
-  renderSurrenderModal();
+S.surrenderToggles[key] = !S.surrenderToggles[key];
+renderSurrenderModal();
 }
 
 function closeSurrenderModal() {
-  document.getElementById('surrenderModal').classList.remove('open');
-  S.surrenderEligible = [];
-  S.surrenderToggles = {};
+document.getElementById('surrenderModal').classList.remove('open');
+S.surrenderEligible = [];
+S.surrenderToggles = {};
 }
 
 function confirmSurrender() {
-  const toggles = S.surrenderToggles || {};
-  const surrendered = Object.entries(toggles).filter(([,v])=>v).map(([k])=>k);
-  if (surrendered.length === 0) { closeSurrenderModal(); return; }
-  // Remove surrendered chains from game state
-  const newChains = { ...S.game.chains };
-  surrendered.forEach(key => { delete newChains[key]; });
-  // Build log description
-  const g = S.game;
-  const descs = surrendered.map(key => {
-    const [wIdx, lIdx] = key.split('-').map(Number);
-    return `${g.players[lIdx]?.name} 投降 ${g.players[wIdx]?.name}`;
-  });
-  const log = {
-    type:'投降',
-    desc: descs.join('、'),
-    payments:[0,0,0,0],
-    unit:g.unitHu||1,
-    round:g.round,
-    events:[],
-    dealer:g.dealer,
-    dealerStreak:g.dealerStreak,
-    windRound:g.windRound||0,
-    playerNames:g.players.map(p=>p.name)
-  };
-  saveWithUndo({ ...g, chains:newChains, log:[log,...g.log] });
-  closeSurrenderModal();
-  renderTab();
+const toggles = S.surrenderToggles || {};
+const surrendered = Object.entries(toggles).filter(([,v])=>v).map(([k])=>k);
+if (surrendered.length === 0) { closeSurrenderModal(); return; }
+// Remove surrendered chains from game state
+const newChains = { ...S.game.chains };
+surrendered.forEach(key => { delete newChains[key]; });
+// Build log description
+const g = S.game;
+const descs = surrendered.map(key => {
+const [wIdx, lIdx] = key.split('-').map(Number);
+return `${g.players[lIdx]?.name} 投降 ${g.players[wIdx]?.name}`;
+});
+const log = {
+type:'投降',
+desc: descs.join('、'),
+payments:[0,0,0,0],
+unit:g.unitHu||1,
+round:g.round,
+events:[],
+dealer:g.dealer,
+dealerStreak:g.dealerStreak,
+windRound:g.windRound||0,
+playerNames:g.players.map(p=>p.name)
+};
+saveWithUndo({ ...g, chains:newChains, log:[log,...g.log] });
+closeSurrenderModal();
+renderTab();
 }
 
 // ── Undo ──────────────────────────────────────────────────────────────────────
@@ -1852,84 +1853,84 @@ function saveUndoStack(stack) { try { localStorage.setItem(UNDO_KEY, JSON.string
 function clearUndo() { localStorage.removeItem(UNDO_KEY); }
 
 function undoLast() {
-  const stack = loadUndoStack();
-  if (stack.length === 0) { alert('沒有可撤銷的操作'); return; }
-  if (!confirm(`撤銷上一步？(還可再撤銷 ${stack.length-1} 步)`)) return;
-  const prev = stack.pop();
-  saveUndoStack(stack);
-  S.game = prev;
-  saveGame(S.game);
-  renderTab();
+const stack = loadUndoStack();
+if (stack.length === 0) { alert('沒有可撤銷的操作'); return; }
+if (!confirm(`撤銷上一步？(還可再撤銷 ${stack.length-1} 步)`)) return;
+const prev = stack.pop();
+saveUndoStack(stack);
+S.game = prev;
+saveGame(S.game);
+renderTab();
 }
 
 function saveWithUndo(newGame) {
-  const stack = loadUndoStack();
-  stack.push(S.game);
-  if (stack.length > 30) stack.shift();
-  saveUndoStack(stack);
-  S.game = newGame;
-  saveGame(S.game);
-  // Push to live session if active
-  pushLiveState();
+const stack = loadUndoStack();
+stack.push(S.game);
+if (stack.length > 30) stack.shift();
+saveUndoStack(stack);
+S.game = newGame;
+saveGame(S.game);
+// Push to live session if active
+pushLiveState();
 }
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 function switchTab(t) {
-  S.tab = t;
-  renderTab();
+S.tab = t;
+renderTab();
 }
 
 function tapWinner(i) {
-  S.winInput = { type:'hu', winners:[i], discard:null, fans:{[i]:1} };
-  openWinModal();
+S.winInput = { type:'hu', winners:[i], discard:null, fans:{[i]:1} };
+openWinModal();
 }
 
 function setWinType(t) {
-  S.winInput.type=t;
-  S.winInput.discard=null;
-  if(t==='zimo') S.winInput.winners=S.winInput.winners.slice(0,1);
-  // preserve fans for remaining winners
-  renderWinModal();
+S.winInput.type=t;
+S.winInput.discard=null;
+if(t==='zimo') S.winInput.winners=S.winInput.winners.slice(0,1);
+// preserve fans for remaining winners
+renderWinModal();
 }
 function setDiscard(i) { S.winInput.discard=i; renderWinModal(); }
 
 function adjustFan(wi, delta) {
-  const cur = S.winInput.fans[wi] || 1;
-  const newVal = Math.max(1, Math.min(250, cur + delta));
-  S.winInput.fans[wi] = newVal;
-  const el = document.getElementById(`fan-input-${wi}`);
-  if (el) el.value = newVal;
-  updatePreviewOnly();
+const cur = S.winInput.fans[wi] || 1;
+const newVal = Math.max(1, Math.min(250, cur + delta));
+S.winInput.fans[wi] = newVal;
+const el = document.getElementById(`fan-input-${wi}`);
+if (el) el.value = newVal;
+updatePreviewOnly();
 }
 
 function toggleExtraWinner(i) {
-  const w=S.winInput;
-  const idx = w.winners.indexOf(i);
-  if (idx > 0) {
-    w.winners = w.winners.filter(x=>x!==i);
-    delete w.fans[i];
-  } else if (w.winners.length < 3) {
-    w.winners = [...w.winners, i];
-    w.fans[i] = 1;
-  }
-  renderWinModal();
+const w=S.winInput;
+const idx = w.winners.indexOf(i);
+if (idx > 0) {
+w.winners = w.winners.filter(x=>x!==i);
+delete w.fans[i];
+} else if (w.winners.length < 3) {
+w.winners = [...w.winners, i];
+w.fans[i] = 1;
+}
+renderWinModal();
 }
 
 function confirmWin() {
-  const w=S.winInput;
-  const isZimo = w.type==='zimo';
-  const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
-  if(!allFansSet || w.winners.length===0 || (!isZimo && w.discard===null)) return;
-  saveWithUndo(applyHand(S.game,{type:w.type,winners:w.winners,discardIdx:w.discard,fans:w.fans}));
-  closeWinModal();
-  // Check for surrender eligibility after hand settled
-  checkSurrenderPrompt();
-  renderTab();
+const w=S.winInput;
+const isZimo = w.type==='zimo';
+const allFansSet = w.winners.length > 0 && w.winners.every(wi => w.fans[wi]);
+if(!allFansSet || w.winners.length===0 || (!isZimo && w.discard===null)) return;
+saveWithUndo(applyHand(S.game,{type:w.type,winners:w.winners,discardIdx:w.discard,fans:w.fans}));
+closeWinModal();
+// Check for surrender eligibility after hand settled
+checkSurrenderPrompt();
+renderTab();
 }
 
 function recordLiuju() {
-  saveWithUndo(applyHand(S.game,{type:'liuju'}));
-  renderTab();
+saveWithUndo(applyHand(S.game,{type:'liuju'}));
+renderTab();
 }
 
 function goSetup() { S.view='setup'; S.setupSeats=[null,null,null,null]; render(); }
@@ -1963,77 +1964,77 @@ async function pushSessionStats(game, allPlayers) {
 }
 
 function endGame() {
-  if(!confirm('確定結束本局？')) return;
-  const g=S.game;
-  const allPlayers = [...g.players, ...(g.bench||[])];
-  allPlayers.forEach(p=>{
-    const idx=S.profiles.findIndex(pr=>pr.name===p.name);
-    if(idx>=0){
-      S.profiles[idx].totalScore=(S.profiles[idx].totalScore||0)+p.score;
-      S.profiles[idx].totalWins=(S.profiles[idx].totalWins||0)+p.wins;
-      S.profiles[idx].totalLosses=(S.profiles[idx].totalLosses||0)+p.losses;
-    }
-  });
-  saveProfiles(S.profiles);
-  const daily = accumulateDaily(allPlayers);
+if(!confirm('確定結束本局？')) return;
+const g=S.game;
+const allPlayers = [...g.players, ...(g.bench||[])];
+allPlayers.forEach(p=>{
+const idx=S.profiles.findIndex(pr=>pr.name===p.name);
+if(idx>=0){
+S.profiles[idx].totalScore=(S.profiles[idx].totalScore||0)+p.score;
+S.profiles[idx].totalWins=(S.profiles[idx].totalWins||0)+p.wins;
+S.profiles[idx].totalLosses=(S.profiles[idx].totalLosses||0)+p.losses;
+}
+});
+saveProfiles(S.profiles);
+const daily = accumulateDaily(allPlayers);
   // Push session stats to Supabase for analysis
   pushSessionStats(g, allPlayers);
-  clearGame();
-  S.game=null;
-  S.view='home';
-  render();
-  showToast(`本局完成 ✓ 今日已累計 ${Object.keys(daily.totals).length} 位玩家`);
+clearGame();
+S.game=null;
+S.view='home';
+render();
+showToast(`本局完成 ✓ 今日已累計 ${Object.keys(daily.totals).length} 位玩家`);
 }
 
 function startGame() {
-  const seats=S.setupSeats;
-  if(seats.some(s=>!s)) return;
-  const unitHu=parseInt(document.getElementById('unitHuInput').value)||2;
-  const unitZimo=parseInt(document.getElementById('unitZimoInput').value)||1;
-  S.setupUnitHu=unitHu;
-  S.setupUnitZimo=unitZimo;
-  S.game={
-    players:seats.map(name=>{
-      const p=S.profiles.find(pr=>pr.name===name);
-      return {name,emoji:p?p.emoji:'👤',score:0,wins:0,losses:0,huWins:0,zimoWins:0,shots:0};
-    }),
-    dealer:0,dealerStreak:0,round:1,windRound:0,unitHu,unitZimo,chains:{},currentWinners:[],bench:[],log:[]
-  };
-  saveGame(S.game);
-  S.setupSeats=[null,null,null,null];
-  S.view='game';S.tab='game';
-  render();
+const seats=S.setupSeats;
+if(seats.some(s=>!s)) return;
+const unitHu=parseInt(document.getElementById('unitHuInput').value)||2;
+const unitZimo=parseInt(document.getElementById('unitZimoInput').value)||1;
+S.setupUnitHu=unitHu;
+S.setupUnitZimo=unitZimo;
+S.game={
+players:seats.map(name=>{
+const p=S.profiles.find(pr=>pr.name===name);
+return {name,emoji:p?p.emoji:'👤',score:0,wins:0,losses:0,huWins:0,zimoWins:0,shots:0};
+}),
+dealer:0,dealerStreak:0,round:1,windRound:0,unitHu,unitZimo,chains:{},currentWinners:[],bench:[],log:[]
+};
+saveGame(S.game);
+S.setupSeats=[null,null,null,null];
+S.view='game';S.tab='game';
+render();
 }
 
 function pickSeat(i) { S.pickingFor=i; S.view='pickPlayer'; render(); }
 function clearSeat(e,i) { e.stopPropagation(); S.setupSeats[i]=null; render(); }
 function assignSeat(name) { S.setupSeats[S.pickingFor]=name; S.view='setup'; render(); }
 function assignTemp() {
-  const n=document.getElementById('tempName')?.value?.trim();
-  if(!n) return;
-  S.setupSeats[S.pickingFor]=n;
-  S.view='setup'; render();
+const n=document.getElementById('tempName')?.value?.trim();
+if(!n) return;
+S.setupSeats[S.pickingFor]=n;
+S.view='setup'; render();
 }
 
 function deleteProfile(i) {
-  if(!confirm('確定刪除？')) return;
-  S.profiles.splice(i,1);
-  saveProfiles(S.profiles);
-  render();
+if(!confirm('確定刪除？')) return;
+S.profiles.splice(i,1);
+saveProfiles(S.profiles);
+render();
 }
 
 function saveProfile() {
-  const name=document.getElementById('profileNameInput')?.value?.trim();
-  if(!name) return;
-  if(S.editingProfile===null) {
-    S.profiles.push({name,emoji:S.editEmoji,totalScore:0,totalWins:0,totalLosses:0});
-  } else {
-    S.profiles[S.editingProfile].name=name;
-    S.profiles[S.editingProfile].emoji=S.editEmoji;
-  }
-  saveProfiles(S.profiles);
-  S.view='profiles';
-  render();
+const name=document.getElementById('profileNameInput')?.value?.trim();
+if(!name) return;
+if(S.editingProfile===null) {
+S.profiles.push({name,emoji:S.editEmoji,totalScore:0,totalWins:0,totalLosses:0});
+} else {
+S.profiles[S.editingProfile].name=name;
+S.profiles[S.editingProfile].emoji=S.editEmoji;
+}
+saveProfiles(S.profiles);
+S.view='profiles';
+render();
 }
 
 // Init
@@ -2041,129 +2042,129 @@ if(S.game) { S.view='game'; }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(msg) {
-  const t = document.createElement('div');
-  t.textContent = msg;
-  t.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#2c2825;color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;z-index:999;pointer-events:none;font-family:'Noto Sans TC',sans-serif;white-space:nowrap";
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(), 3000);
+const t = document.createElement('div');
+t.textContent = msg;
+t.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#2c2825;color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;z-index:999;pointer-events:none;font-family:'Noto Sans TC',sans-serif;white-space:nowrap";
+document.body.appendChild(t);
+setTimeout(()=>t.remove(), 3000);
 }
 
 // ── Push to Lovable ───────────────────────────────────────────────────────────
 function openPushModal() {
-  S.pushEdits = null; // reset edits on open
-  document.getElementById('pushModal').classList.add('open');
-  renderPushModal('idle');
+S.pushEdits = null; // reset edits on open
+document.getElementById('pushModal').classList.add('open');
+renderPushModal('idle');
 }
 function closePushModal() { document.getElementById('pushModal').classList.remove('open'); }
 
 function renderPushModal(state, message) {
-  const daily = loadDaily();
-  if (!S.pushEdits) {
-    S.pushEdits = { date: daily.date, amounts: {...daily.totals} };
-  }
-  const edits = S.pushEdits;
-  const known = Object.entries(edits.amounts).filter(([n])=>KNOWN_PLAYERS.includes(n));
-  const skipped = Object.entries(daily.totals).filter(([n])=>!KNOWN_PLAYERS.includes(n));
-  const sum = Object.values(edits.amounts).reduce((a,b)=>a+b,0);
-  const sumOk = sum === 0;
+const daily = loadDaily();
+if (!S.pushEdits) {
+S.pushEdits = { date: daily.date, amounts: {...daily.totals} };
+}
+const edits = S.pushEdits;
+const known = Object.entries(edits.amounts).filter(([n])=>KNOWN_PLAYERS.includes(n));
+const skipped = Object.entries(daily.totals).filter(([n])=>!KNOWN_PLAYERS.includes(n));
+const sum = Object.values(edits.amounts).reduce((a,b)=>a+b,0);
+const sumOk = sum === 0;
 
-  document.getElementById('pushSheetContent').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div class="modal-title" style="color:#2d7a4f">📤 推送至 Lovable</div>
-      <button onclick="closePushModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
-    </div>
+document.getElementById('pushSheetContent').innerHTML = `
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+     <div class="modal-title" style="color:#2d7a4f">📤 推送至 Lovable</div>
+     <button onclick="closePushModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
+   </div>
 
-    <div class="modal-section">日期</div>
-    <input type="date" value="${edits.date}" onchange="S.pushEdits.date=this.value"
-      style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:15px;font-family:'Noto Sans TC',sans-serif;color:var(--text);margin-bottom:12px">
+   <div class="modal-section">日期</div>
+   <input type="date" value="${edits.date}" onchange="S.pushEdits.date=this.value"
+     style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);background:var(--bg);font-size:15px;font-family:'Noto Sans TC',sans-serif;color:var(--text);margin-bottom:12px">
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div class="modal-section" style="margin:0">金額</div>
-      <div style="font-size:13px;font-weight:700;color:${sumOk?'var(--green)':'var(--red)'}">合計: $${sum} ${sumOk?'✓':'(須為0)'}</div>
-    </div>
-    ${known.map(([n,amt])=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--bg2)">
-      <span style="font-size:18px">${S.profiles.find(p=>p.name===n)?.emoji||'👤'}</span>
-      <span style="flex:1;font-size:14px;font-weight:600">${esc(n)}</span>
-      <input type="number" value="${amt}"
-        onchange="S.pushEdits.amounts['${n}']=parseInt(this.value)||0;renderPushModal('idle')"
-        style="width:90px;padding:6px 8px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);
-        background:var(--bg);font-size:15px;font-weight:700;text-align:right;
-        color:${amt>=0?'var(--green)':'var(--red)'};font-family:'Noto Sans TC',sans-serif">
-    </div>`).join('')}
-    ${skipped.length>0?`<div style="font-size:11px;color:var(--text3);margin-top:8px">略過（非標準牌友）：${skipped.map(([n])=>n).join('、')}</div>`:''}
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+     <div class="modal-section" style="margin:0">金額</div>
+     <div style="font-size:13px;font-weight:700;color:${sumOk?'var(--green)':'var(--red)'}">合計: $${sum} ${sumOk?'✓':'(須為0)'}</div>
+   </div>
+   ${known.map(([n,amt])=>`
+   <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--bg2)">
+     <span style="font-size:18px">${S.profiles.find(p=>p.name===n)?.emoji||'👤'}</span>
+     <span style="flex:1;font-size:14px;font-weight:600">${esc(n)}</span>
+     <input type="number" value="${amt}"
+       onchange="S.pushEdits.amounts['${n}']=parseInt(this.value)||0;renderPushModal('idle')"
+       style="width:90px;padding:6px 8px;border-radius:var(--radius-sm);border:1.5px solid var(--bg2);
+       background:var(--bg);font-size:15px;font-weight:700;text-align:right;
+       color:${amt>=0?'var(--green)':'var(--red)'};font-family:'Noto Sans TC',sans-serif">
+   </div>`).join('')}
+   ${skipped.length>0?`<div style="font-size:11px;color:var(--text3);margin-top:8px">略過（非標準牌友）：${skipped.map(([n])=>n).join('、')}</div>`:''}
 
-    ${state==='loading'?`<div style="text-align:center;padding:16px;color:var(--text2);font-size:14px">⏳ 推送中...</div>`:''}
-    ${state==='success'?`<div style="background:#f0fdf4;border-radius:var(--radius-sm);padding:12px;margin-top:8px;color:#2d7a4f;font-size:14px;font-weight:500">✅ 推送成功！</div>`:''}
-    ${state==='error'?`<div style="background:#fef2f2;border-radius:var(--radius-sm);padding:12px;margin-top:8px;color:var(--red);font-size:13px">❌ ${esc(message||'未知錯誤')}</div>`:''}
+   ${state==='loading'?`<div style="text-align:center;padding:16px;color:var(--text2);font-size:14px">⏳ 推送中...</div>`:''}
+   ${state==='success'?`<div style="background:#f0fdf4;border-radius:var(--radius-sm);padding:12px;margin-top:8px;color:#2d7a4f;font-size:14px;font-weight:500">✅ 推送成功！</div>`:''}
+   ${state==='error'?`<div style="background:#fef2f2;border-radius:var(--radius-sm);padding:12px;margin-top:8px;color:var(--red);font-size:13px">❌ ${esc(message||'未知錯誤')}</div>`:''}
 
-    ${state==='success'
-      ?`<button class="confirm-btn" style="background:#2d7a4f;margin-top:12px" onclick="clearDaily();S.pushEdits=null;closePushModal();render()">完成並清除今日記錄</button>`
-      :`<button class="confirm-btn" style="background:#2d7a4f;margin-top:12px" ${!sumOk||state==='loading'||known.length===0?'disabled':''} onclick="pushToLovable()">
-        ${sumOk?'確認推送':'合計須為 $0'}
-      </button>`
-    }
-  `;
+   ${state==='success'
+     ?`<button class="confirm-btn" style="background:#2d7a4f;margin-top:12px" onclick="clearDaily();S.pushEdits=null;closePushModal();render()">完成並清除今日記錄</button>`
+     :`<button class="confirm-btn" style="background:#2d7a4f;margin-top:12px" ${!sumOk||state==='loading'||known.length===0?'disabled':''} onclick="pushToLovable()">
+       ${sumOk?'確認推送':'合計須為 $0'}
+     </button>`
+   }
+ `;
 }
 
 
 async function pushToLovable() {
-  renderPushModal('loading');
-  const edits = S.pushEdits;
-  const headers = {
-    'Content-Type': 'application/json',
-    'apikey': SUPABASE_ANON_KEY,
-    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-    'Prefer': 'return=representation',
-  };
-  try {
-    const playersRes = await fetch(`${SUPABASE_URL}/rest/v1/players?select=id,name`, { headers });
-    if (!playersRes.ok) throw new Error(`players 表格讀取失敗 (${playersRes.status})`);
-    const players = await playersRes.json();
-    const nameToId = {};
-    players.forEach(p => nameToId[p.name] = p.id);
+renderPushModal('loading');
+const edits = S.pushEdits;
+const headers = {
+'Content-Type': 'application/json',
+'apikey': SUPABASE_ANON_KEY,
+'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+'Prefer': 'return=representation',
+};
+try {
+const playersRes = await fetch(`${SUPABASE_URL}/rest/v1/players?select=id,name`, { headers });
+if (!playersRes.ok) throw new Error(`players 表格讀取失敗 (${playersRes.status})`);
+const players = await playersRes.json();
+const nameToId = {};
+players.forEach(p => nameToId[p.name] = p.id);
 
-    const sessionRes = await fetch(`${SUPABASE_URL}/rest/v1/game_sessions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ game_date: edits.date }),
-    });
-    if (!sessionRes.ok) throw new Error(`game_sessions 寫入失敗 (${sessionRes.status})`);
-    const sessions = await sessionRes.json();
-    const sessionId = sessions[0]?.id;
-    if (!sessionId) throw new Error('無法取得 session id');
+const sessionRes = await fetch(`${SUPABASE_URL}/rest/v1/game_sessions`, {
+method: 'POST',
+headers,
+body: JSON.stringify({ game_date: edits.date }),
+});
+if (!sessionRes.ok) throw new Error(`game_sessions 寫入失敗 (${sessionRes.status})`);
+const sessions = await sessionRes.json();
+const sessionId = sessions[0]?.id;
+if (!sessionId) throw new Error('無法取得 session id');
 
-    const results = Object.entries(edits.amounts)
-      .filter(([name]) => KNOWN_PLAYERS.includes(name) && nameToId[name])
-      .map(([name, amount]) => ({ session_id: sessionId, player_id: nameToId[name], amount }));
+const results = Object.entries(edits.amounts)
+.filter(([name]) => KNOWN_PLAYERS.includes(name) && nameToId[name])
+.map(([name, amount]) => ({ session_id: sessionId, player_id: nameToId[name], amount }));
 
-    if (results.length === 0) throw new Error('沒有符合的牌友資料');
+if (results.length === 0) throw new Error('沒有符合的牌友資料');
 
-    const resultsRes = await fetch(`${SUPABASE_URL}/rest/v1/player_results`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(results),
-    });
-    if (!resultsRes.ok) throw new Error(`player_results 寫入失敗 (${resultsRes.status})`);
+const resultsRes = await fetch(`${SUPABASE_URL}/rest/v1/player_results`, {
+method: 'POST',
+headers,
+body: JSON.stringify(results),
+});
+if (!resultsRes.ok) throw new Error(`player_results 寫入失敗 (${resultsRes.status})`);
 
-    renderPushModal('success');
-  } catch(err) {
-    renderPushModal('error', err.message);
-  }
+renderPushModal('success');
+} catch(err) {
+renderPushModal('error', err.message);
+}
 }
 
 render();
 checkSpectatorMode();
-  // Register service worker for PWA
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  }
+// Register service worker for PWA
+if ('serviceWorker' in navigator) {
+navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 </script>
 <!-- Push to Lovable modal -->
 <div class="modal-overlay" id="pushModal">
-  <div class="modal-sheet">
-    <div id="pushSheetContent"></div>
-  </div>
+<div class="modal-sheet">
+<div id="pushSheetContent"></div>
+</div>
 </div>
 
 </body>
