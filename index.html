@@ -769,16 +769,14 @@ function scoreClass(n) { return n>0?'pos':n<0?'neg':'zero'; }
 function fmt(n) { return (n>=0?'+':'')+n; }
 
 function closeAllModals() {
-  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.classList.remove('open');
+  });
 }
 
 function render() {
-  // Close any open modals when navigating to a new view
-  const prevView = render._lastView;
-  if (prevView !== S.view) {
-    closeAllModals();
-    render._lastView = S.view;
-  }
+  // Always close modals on navigation renders
+  closeAllModals();
   const mc = document.getElementById('main-content');
   const tb = document.getElementById('tabbar');
 
