@@ -190,15 +190,15 @@
 <div id="root">
   <div id="main-content" style="flex:1;overflow:hidden;display:flex;flex-direction:column;"></div>
   <div class="tabbar" id="tabbar" style="display:none;">
-    <div class="tab active" data-tab="game" onclick="switchTab('game')">
+    <div class="tab active" data-tab="game" onclick="S.view==='spectator'?spectatorSwitchTab('game'):switchTab('game')">
       <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22" style="fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"/></svg>
       <span>現時賽果</span>
     </div>
-    <div class="tab" data-tab="stats" onclick="switchTab('stats')">
+    <div class="tab" data-tab="stats" onclick="S.view==='spectator'?spectatorSwitchTab('stats'):switchTab('stats')">
       <svg viewBox="0 0 24 24"><rect x="18" y="3" width="4" height="18" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="2" y="13" width="4" height="8" rx="1"/></svg>
       <span>統計數據</span>
     </div>
-    <div class="tab" data-tab="log" onclick="switchTab('log')">
+    <div class="tab" data-tab="log" onclick="S.view==='spectator'?spectatorSwitchTab('log'):switchTab('log')">
       <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
       <span>詳細記錄</span>
     </div>
@@ -285,7 +285,6 @@ function today() { return new Date().toISOString().slice(0,10); }
 
 function accumulateDaily(allPlayers) {
   let daily = loadDaily();
-  // Reset if date changed
   if (daily.date !== today()) daily = { date: today(), totals:{} };
   allPlayers.forEach(p => {
     if (p.score !== 0) {
@@ -298,7 +297,20 @@ function accumulateDaily(allPlayers) {
 
 function loadProfiles() { try { return JSON.parse(localStorage.getItem(PROFILES_KEY)) || []; } catch { return []; } }
 function saveProfiles(p) { localStorage.setItem(PROFILES_KEY, JSON.stringify(p)); }
-function loadGame() { try { return JSON.parse(localStorage.getItem(GAME_KEY)); } catch { return null; } }
+function loadGame() {
+  try {
+    const g = JSON.parse(localStorage.getItem(GAME_KEY));
+    if (g) {
+      // Version 2: chains store money instead of fan
+      if (!g.version || g.version < 2) {
+        g.chains = {};
+        g.version = 2;
+        saveGame(g);
+      }
+    }
+    return g;
+  } catch { return null; }
+}
 function saveGame(g) { localStorage.setItem(GAME_KEY, JSON.stringify(g)); }
 function clearGame() { localStorage.removeItem(GAME_KEY); }
 
@@ -338,66 +350,76 @@ let S = {
 function calcHandPayments(game, winners, discardIdx, fans, isZimo) {
   const dealer = game.dealer;
   const n = game.dealerStreak;
-  const bonus = 2 * n + 1;
-  const chains = game.chains || {};
-  const currentWinners = game.currentWinners || [];
-  const unit = isZimo ? (game.unitZimo||game.unit||1) : (game.unitHu||game.unit||1);
-  const payments = [0,0,0,0];
+  const bonusFan = 2 * n + 1;
+  const unit = isZimo ? (game.unitZimo || game.unit || 1) : (game.unitHu || game.unit || 1);
+  const payments = [0, 0, 0, 0];
   const newChains = {};
   const events = [];
 
   winners.forEach(wIdx => {
     const fan = fans[wIdx] || 1;
-    const base = fan + 5;
+    const baseFan = 5 + fan;
     const winnerIsDealer = wIdx === dealer;
-    const losers = isZimo ? [0,1,2,3].filter(i=>i!==wIdx) : [discardIdx];
+    const losers = isZimo ? [0,1,2,3].filter(i => i !== wIdx) : [discardIdx];
 
     losers.forEach(lIdx => {
       const pairKey = `${wIdx}-${lIdx}`;
       const reverseKey = `${lIdx}-${wIdx}`;
       const loserIsDealer = lIdx === dealer;
+      const dealerBonusFan = (winnerIsDealer || loserIsDealer) ? bonusFan : 0;
+      const baseFanThis = baseFan + dealerBonusFan;
+      const baseMoney = baseFanThis * unit;
 
-      // base pay with 連莊 if 莊 involved
-      let dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
-      let basePay = base + dealerBonusPay;
+      const prevMoney = chainCum(game.chains[pairKey]);
+      const prevPulls = chainPulls(game.chains[pairKey]);
+      const reverseMoney = chainCum(game.chains[reverseKey]);
 
-      const prevCumulative = chainCum(chains[pairKey]);
-      const prevPulls = chainPulls(chains[pairKey]);
-      const reverseCumulative = chainCum(chains[reverseKey]);
-
-      let thisPay = basePay;
-      let newCumulative = basePay;
+      let thisMoney = baseMoney;
+      let newCumulativeMoney = baseMoney;
       let newPulls = prevPulls;
 
-      if (reverseCumulative > 0 && currentWinners.includes(lIdx)) {
-        // 剪
-        const clawback = Math.floor(reverseCumulative * 0.5);
-        thisPay = basePay + clawback;
-        newCumulative = basePay;
+      // 剪 (clawback) – money based
+      if (reverseMoney > 0 && (game.currentWinners || []).includes(lIdx)) {
+        const clawbackMoney = Math.floor(reverseMoney * 0.5);
+        thisMoney = baseMoney + clawbackMoney;
+        newCumulativeMoney = baseMoney;
         newPulls = 1;
-        events.push({ type:'剪', winner:wIdx, loser:lIdx, clawback, fan, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumulative, isZimo });
-      } else if (prevCumulative > 0) {
-        // 拉
-        const pullBonus = Math.floor(prevCumulative * 0.5);
-        thisPay = basePay + pullBonus;
-        newCumulative = prevCumulative + thisPay;
+        events.push({
+          type: '剪', winner: wIdx, loser: lIdx,
+          clawbackMoney, baseMoney, totalMoney: thisMoney,
+          prevMoney: reverseMoney, fan, dealerBonusFan, isZimo
+        });
+      }
+      // 拉 (pull) – money based
+      else if (prevMoney > 0 && (game.currentWinners || []).includes(wIdx)) {
+        const pullBonusMoney = Math.floor(prevMoney * 0.5);
+        thisMoney = baseMoney + pullBonusMoney;
+        newCumulativeMoney = prevMoney + thisMoney;
         newPulls = prevPulls + 1;
-        events.push({ type:'拉', winner:wIdx, loser:lIdx, pullBonus, fan, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, pulls:newPulls, isZimo });
+        events.push({
+          type: '拉', winner: wIdx, loser: lIdx,
+          pullBonusMoney, baseMoney, totalMoney: thisMoney,
+          cumulativeMoney: newCumulativeMoney, pulls: newPulls,
+          fan, dealerBonusFan, isZimo
+        });
       } else {
         newPulls = 1;
-        events.push({ type:'normal', winner:wIdx, loser:lIdx, fan, dealerBonusPay, basePay, total:thisPay, isZimo });
+        events.push({
+          type: 'normal', winner: wIdx, loser: lIdx,
+          fan, dealerBonusFan, baseMoney, totalMoney: thisMoney, isZimo
+        });
       }
 
-      payments[wIdx] += thisPay;
-      payments[lIdx] -= thisPay;
-      newChains[pairKey] = chainObj(newCumulative, newPulls);
+      payments[wIdx] += thisMoney;
+      payments[lIdx] -= thisMoney;
+      newChains[pairKey] = chainObj(newCumulativeMoney, newPulls);
     });
   });
 
-  // Preserve chains for current winners not touched this hand
-  Object.keys(chains).forEach(key => {
+  // Preserve untouched chains
+  Object.keys(game.chains).forEach(key => {
     const [w] = key.split('-').map(Number);
-    if (winners.includes(w) && !newChains[key]) newChains[key] = chains[key];
+    if (winners.includes(w) && !newChains[key]) newChains[key] = game.chains[key];
   });
 
   return { payments, newChains, events, unit };
@@ -421,7 +443,7 @@ function applyHand(game, result) {
   const { payments, newChains, events, unit } = calcHandPayments(game, winners, discardIdx, fans, isZimo);
   const players = game.players.map((p,i) => ({
     ...p,
-    score: p.score + payments[i]*unit,
+    score: p.score + payments[i],
     wins: p.wins + (winners.includes(i)?1:0),
     losses: p.losses + (payments[i]<0?1:0),
     zimoWins: (p.zimoWins||0) + (winners.includes(i)&&isZimo?1:0),
@@ -466,60 +488,58 @@ function applyHand(game, result) {
 function applyZhaHu(game, payerIdx) {
   const dealer = game.dealer;
   const n = game.dealerStreak;
-  const bonus = 2 * n + 1;
-  const chains = game.chains || {};
-  const currentWinners = game.currentWinners || [];
+  const bonusFan = 2 * n + 1;
   const unit = game.unitHu || game.unit || 1;
   const ZHA_FAN = 30;
-  const payments = [0,0,0,0];
-  const newChains = { ...chains };
+  const payments = [0, 0, 0, 0];
+  const newChains = { ...game.chains };
   const events = [];
 
   for (let wIdx = 0; wIdx < 4; wIdx++) {
     if (wIdx === payerIdx) continue;
-    const pairKey = `${wIdx}-${payerIdx}`;   // winner→loser (wIdx wins from payer)
-    const reverseKey = `${payerIdx}-${wIdx}`; // payer's chain against this receiver
-
+    const pairKey = `${wIdx}-${payerIdx}`;
+    const reverseKey = `${payerIdx}-${wIdx}`;
     const winnerIsDealer = wIdx === dealer;
     const loserIsDealer = payerIdx === dealer;
-    const dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
-    let basePay = ZHA_FAN + dealerBonusPay; // no 底
+    const dealerBonusFan = (winnerIsDealer || loserIsDealer) ? bonusFan : 0;
+    const baseFan = ZHA_FAN + dealerBonusFan;
+    const baseMoney = baseFan * unit;
 
-    const prevCumulative = chainCum(chains[pairKey]);
-    const prevPulls = chainPulls(chains[pairKey]);
-    const reverseCumulative = chainCum(chains[reverseKey]);
+    const prevMoney = chainCum(game.chains[pairKey]);
+    const prevPulls = chainPulls(game.chains[pairKey]);
+    const reverseMoney = chainCum(game.chains[reverseKey]);
 
-    let thisPay = basePay;
-    let newCumulative = basePay;
+    let thisMoney = baseMoney;
+    let newCumulativeMoney = baseMoney;
     let newPulls = prevPulls;
 
-    if (reverseCumulative > 0 && currentWinners.includes(payerIdx)) {
-      const clawback = Math.floor(reverseCumulative * 0.5);
-      thisPay = basePay + clawback;
-      newCumulative = basePay;
+    if (reverseMoney > 0 && (game.currentWinners || []).includes(payerIdx)) {
+      const clawbackMoney = Math.floor(reverseMoney * 0.5);
+      thisMoney = baseMoney + clawbackMoney;
+      newCumulativeMoney = baseMoney;
       newPulls = 1;
       delete newChains[reverseKey];
-      events.push({ type:'剪', winner:wIdx, loser:payerIdx, clawback, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, prevCumulative:reverseCumulative, isZimo:false });
-    } else if (prevCumulative > 0 && currentWinners.includes(wIdx)) {
-      const pullBonus = Math.floor(prevCumulative * 0.5);
-      thisPay = basePay + pullBonus;
-      newCumulative = prevCumulative + thisPay;
+      events.push({ type: '剪', winner: wIdx, loser: payerIdx, clawbackMoney, baseMoney, totalMoney: thisMoney, prevMoney: reverseMoney, fan: ZHA_FAN, dealerBonusFan, isZimo: false });
+    } else if (prevMoney > 0 && (game.currentWinners || []).includes(wIdx)) {
+      const pullBonusMoney = Math.floor(prevMoney * 0.5);
+      thisMoney = baseMoney + pullBonusMoney;
+      newCumulativeMoney = prevMoney + thisMoney;
       newPulls = prevPulls + 1;
-      events.push({ type:'拉', winner:wIdx, loser:payerIdx, pullBonus, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, cumulative:newCumulative, pulls:newPulls, isZimo:false });
+      events.push({ type: '拉', winner: wIdx, loser: payerIdx, pullBonusMoney, baseMoney, totalMoney: thisMoney, cumulativeMoney: newCumulativeMoney, pulls: newPulls, fan: ZHA_FAN, dealerBonusFan, isZimo: false });
     } else {
       newPulls = 1;
-      events.push({ type:'normal', winner:wIdx, loser:payerIdx, fan:ZHA_FAN, dealerBonusPay, basePay, total:thisPay, isZimo:false });
+      events.push({ type: 'normal', winner: wIdx, loser: payerIdx, fan: ZHA_FAN, dealerBonusFan, baseMoney, totalMoney: thisMoney, isZimo: false });
     }
 
-    payments[wIdx] += thisPay;
-    payments[payerIdx] -= thisPay;
-    newChains[pairKey] = chainObj(newCumulative, newPulls);
+    payments[wIdx] += thisMoney;
+    payments[payerIdx] -= thisMoney;
+    newChains[pairKey] = chainObj(newCumulativeMoney, newPulls);
   }
 
   const pname = i => game.players[i].name;
   const players = game.players.map((p,i) => ({
     ...p,
-    score: p.score + payments[i] * unit,
+    score: p.score + payments[i],
     losses: p.losses + (i === payerIdx ? 1 : 0),
   }));
   const desc = `${pname(payerIdx)} 詐胡`;
@@ -535,16 +555,16 @@ function applyPenalty(game, subjectIdx, otherIdx, di, dir) {
   // dir='pay': subject pays others; dir='collect': subject collects from others
   const fan = di * 5;
   const unit = game.unitHu || game.unit || 1;
-  const payments = [0,0,0,0];
+  const payments = [0, 0, 0, 0];
   const others = otherIdx === 'all' ? [0,1,2,3].filter(i=>i!==subjectIdx) : [otherIdx];
 
   others.forEach(oIdx => {
     if (dir === 'pay') {
-      payments[subjectIdx] -= fan;
-      payments[oIdx] += fan;
+      payments[subjectIdx] -= fan * unit;
+      payments[oIdx] += fan * unit;
     } else {
-      payments[subjectIdx] += fan;
-      payments[oIdx] -= fan;
+      payments[subjectIdx] += fan * unit;
+      payments[oIdx] -= fan * unit;
     }
   });
 
@@ -553,7 +573,7 @@ function applyPenalty(game, subjectIdx, otherIdx, di, dir) {
   const desc = dir === 'pay'
     ? `${pname(subjectIdx)} 獎罰 付${di}底 → ${otherDesc}`
     : `${pname(subjectIdx)} 獎罰 收${di}底 ← ${otherDesc}`;
-  const players = game.players.map((p,i) => ({ ...p, score: p.score + payments[i]*unit }));
+  const players = game.players.map((p,i) => ({ ...p, score: p.score + payments[i] }));
   const log = { type:'獎罰', desc, payments, unit, round:game.round, events:[], dealer:game.dealer, dealerStreak:game.dealerStreak, windRound:game.windRound||0, playerNames:game.players.map(p=>p.name) };
   return { ...game, players, log:[log,...game.log], round:game.round+1 };
 }
@@ -965,7 +985,7 @@ function renderLogTab() {
       ${allPlayers.map(p => {
         const pay = payByName[p.name] || 0;
         const sub = cellDesc[p.name] ? `<div style="font-size:9px;color:var(--text3);margin-top:1px">${cellDesc[p.name]}</div>` : '';
-        return `<td class="score-cell ${scoreClass(pay)}" style="vertical-align:top;padding-top:8px">${pay!==0?fmt(pay*l.unit):'0'}${sub}</td>`;
+        return `<td class="score-cell ${scoreClass(pay)}" style="vertical-align:top;padding-top:8px">${pay!==0?fmt(pay):'0'}${sub}</td>`;
       }).join('')}
     </tr>`;
   });
@@ -975,7 +995,7 @@ function renderLogTab() {
       <thead class="log-header"><tr>
         <td style="width:52px"></td>
         ${allPlayers.map(p=>`<td class="player-col"><div>${p.emoji}</div><div>${esc(p.name)}</div><div style="font-size:12px;font-weight:700;color:${p.score>=0?'var(--green)':'var(--red)'}">${p.score>=0?'+':''}${p.score}</div></td>`).join('')}
-      </tr></thead>
+      </table></thead>
       <tbody>
         ${rows.join('')}
         <tr class="log-row"><td><div class="wind-cell" style="font-size:9px">開始</div></td>${allPlayers.map(()=>`<td class="score-cell zero">0</td>`).join('')}</tr>
@@ -1019,15 +1039,15 @@ function renderWinModal() {
     const wn = g.players[ev.winner].name;
     const ln = g.players[ev.loser].name;
     const typeLabel = ev.isZimo ? '自摸' : '食糊';
-    const dealerPart = ev.dealerBonusPay > 0 ? ` + ${ev.dealerBonusPay}番連莊` : '';
+    const dealerPart = ev.dealerBonusFan > 0 ? ` + ${ev.dealerBonusFan}番連莊` : '';
     if (ev.type==='normal') {
-      return `<div class="preview-row"><span>${wn}←${ln}</span><span>5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+      return `<div class="preview-row"><span>${wn}←${ln}</span><span>5底 + ${ev.fan}番${typeLabel}${dealerPart} = $${ev.totalMoney}</span></div>`;
     }
     if (ev.type==='拉') {
-      return `<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${ev.cumulative - ev.total}×0.5)=${ev.pullBonus}拉 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+      return `<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${ev.cumulativeMoney - ev.totalMoney}×0.5)=${ev.pullBonusMoney} + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = $${ev.totalMoney}</span></div>`;
     }
     if (ev.type==='剪') {
-      return `<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${ev.prevCumulative}×0.5)=${ev.clawback}番剪 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+      return `<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${ev.prevMoney}×0.5)=${ev.clawbackMoney} + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = $${ev.totalMoney}</span></div>`;
     }
     return '';
   }).join('') : '';
@@ -1073,7 +1093,7 @@ function renderWinModal() {
     ${preview?`<div class="preview-bar" id="win-preview">
       ${eventLines}
       <div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">
-        ${preview.payments.map((pay,i)=>pay!==0?`<div class="preview-row preview-total"><span>${g.players[i].emoji} ${g.players[i].name}</span><span style="color:${pay>0?'var(--green)':'var(--red)'}">${pay>0?'+':''}$${pay*preview.unit}</span></div>`:'').join('')}
+        ${preview.payments.map((pay,i)=>pay!==0?`<div class="preview-row preview-total"><span>${g.players[i].emoji} ${g.players[i].name}</span><span style="color:${pay>0?'var(--green)':'var(--red)'}">${pay>0?'+':''}$${pay}</span></div>`:'').join('')}
       </div>
     </div>`:`<div class="preview-bar" id="win-preview" style="color:var(--text3);font-size:13px">選擇番數後顯示計算</div>`}
 
@@ -1121,7 +1141,6 @@ function adjustFan(wi, delta) {
 }
 
 function updatePreviewOnly() {
-  // Re-render just the preview and confirm button without full modal re-render
   const g = S.game;
   const w = S.winInput;
   const preview = buildPreview(g, w);
@@ -1144,13 +1163,13 @@ function updatePreviewOnly() {
       const wn = g.players[ev.winner].name;
       const ln = g.players[ev.loser].name;
       const typeLabel = ev.isZimo ? '自摸' : '食糊';
-      const dealerPart = ev.dealerBonusPay > 0 ? ` + ${ev.dealerBonusPay}番連莊` : '';
-      if (ev.type==='normal') return `<div class="preview-row"><span>${wn}←${ln}</span><span>5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
-      if (ev.type==='拉') return `<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${ev.cumulative - ev.total}×0.5)=${ev.pullBonus}拉 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
-      if (ev.type==='剪') return `<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${ev.prevCumulative}×0.5)=${ev.clawback}番剪 + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = ${ev.total}番</span></div>`;
+      const dealerPart = ev.dealerBonusFan > 0 ? ` + ${ev.dealerBonusFan}番連莊` : '';
+      if (ev.type==='normal') return `<div class="preview-row"><span>${wn}←${ln}</span><span>5底 + ${ev.fan}番${typeLabel}${dealerPart} = $${ev.totalMoney}</span></div>`;
+      if (ev.type==='拉') return `<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${ev.cumulativeMoney - ev.totalMoney}×0.5)=${ev.pullBonusMoney} + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = $${ev.totalMoney}</span></div>`;
+      if (ev.type==='剪') return `<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${ev.prevMoney}×0.5)=${ev.clawbackMoney} + 5底 + ${ev.fan}番${typeLabel}${dealerPart} = $${ev.totalMoney}</span></div>`;
       return '';
     }).join('');
-    const payLines = preview.payments.map((pay,i)=>pay!==0?`<div class="preview-row preview-total"><span>${g.players[i].emoji} ${g.players[i].name}</span><span style="color:${pay>0?'var(--green)':'var(--red)'}">${pay>0?'+':''}$${pay*preview.unit}</span></div>`:'').join('');
+    const payLines = preview.payments.map((pay,i)=>pay!==0?`<div class="preview-row preview-total"><span>${g.players[i].emoji} ${g.players[i].name}</span><span style="color:${pay>0?'var(--green)':'var(--red)'}">${pay>0?'+':''}$${pay}</span></div>`:'').join('');
     previewEl.innerHTML = eventLines + `<div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">${payLines}</div>`;
     previewEl.style.color = '';
   } else {
@@ -1214,7 +1233,7 @@ function closeZhaHuModal() { document.getElementById('zhaHuModal').classList.rem
 function renderZhaHuModal() {
   const g = S.game;
   const n = g.dealerStreak;
-  const bonus = 2*n+1;
+  const bonusFan = 2*n+1;
   const payerIdx = S.zhaHuPayer;
   const unit = g.unitHu || g.unit || 1;
   const ZHA_FAN = 30;
@@ -1233,31 +1252,32 @@ function renderZhaHuModal() {
       const reverseKey = `${payerIdx}-${wIdx}`;
       const winnerIsDealer = wIdx === dealer;
       const loserIsDealer = payerIdx === dealer;
-      const dealerBonusPay = (winnerIsDealer || loserIsDealer) ? bonus : 0;
-      let basePay = ZHA_FAN + dealerBonusPay;
-      const prevCumulative = chainCum(chains[pairKey]);
-      const reverseCumulative = chainCum(chains[reverseKey]);
-      let thisPay = basePay;
+      const dealerBonusFan = (winnerIsDealer || loserIsDealer) ? bonusFan : 0;
+      const baseFan = ZHA_FAN + dealerBonusFan;
+      const baseMoney = baseFan * unit;
+      const prevMoney = chainCum(chains[pairKey]);
+      const reverseMoney = chainCum(chains[reverseKey]);
+      let thisMoney = baseMoney;
       const wn = g.players[wIdx].name;
       const ln = g.players[payerIdx].name;
-      const dealerPart = dealerBonusPay > 0 ? ` + ${dealerBonusPay}番連莊` : '';
-      if (reverseCumulative > 0 && currentWinners.includes(payerIdx)) {
-        const clawback = Math.floor(reverseCumulative * 0.5);
-        thisPay = basePay + clawback;
-        previewLines.push(`<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${reverseCumulative}×0.5)=${clawback}剪 + ${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
-      } else if (prevCumulative > 0 && currentWinners.includes(wIdx)) {
-        const pullBonus = Math.floor(prevCumulative * 0.5);
-        thisPay = basePay + pullBonus;
-        previewLines.push(`<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${prevCumulative}×0.5)=${pullBonus}拉 + ${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
+      const dealerPart = dealerBonusFan > 0 ? ` + ${dealerBonusFan}番連莊` : '';
+      if (reverseMoney > 0 && currentWinners.includes(payerIdx)) {
+        const clawbackMoney = Math.floor(reverseMoney * 0.5);
+        thisMoney = baseMoney + clawbackMoney;
+        previewLines.push(`<div class="preview-row" style="color:var(--red)"><span>剪 ${ln}→${wn}</span><span>(${reverseMoney}×0.5)=${clawbackMoney} + ${ZHA_FAN}詐胡${dealerPart} = $${thisMoney}</span></div>`);
+      } else if (prevMoney > 0 && currentWinners.includes(wIdx)) {
+        const pullBonusMoney = Math.floor(prevMoney * 0.5);
+        thisMoney = baseMoney + pullBonusMoney;
+        previewLines.push(`<div class="preview-row" style="color:var(--green)"><span>拉 ${wn}←${ln}</span><span>(${prevMoney}×0.5)=${pullBonusMoney} + ${ZHA_FAN}詐胡${dealerPart} = $${thisMoney}</span></div>`);
       } else {
-        previewLines.push(`<div class="preview-row"><span>${wn}←${ln}</span><span>${ZHA_FAN}詐胡${dealerPart} = ${thisPay}番</span></div>`);
+        previewLines.push(`<div class="preview-row"><span>${wn}←${ln}</span><span>${ZHA_FAN}詐胡${dealerPart} = $${thisMoney}</span></div>`);
       }
-      total += thisPay;
+      total += thisMoney;
     }
     previewHtml = `<div class="preview-bar">
       ${previewLines.join('')}
       <div style="border-top:1px solid var(--bg2);margin-top:6px;padding-top:6px">
-        <div class="preview-row preview-total"><span>${g.players[payerIdx].emoji} ${g.players[payerIdx].name} 總付</span><span style="color:var(--red)">-$${total*unit}</span></div>
+        <div class="preview-row preview-total"><span>${g.players[payerIdx].emoji} ${g.players[payerIdx].name} 總付</span><span style="color:var(--red)">-$${total}</span></div>
       </div>
     </div>`;
   }
@@ -1267,7 +1287,7 @@ function renderZhaHuModal() {
       <div class="modal-title" style="color:var(--red)">詐胡</div>
       <button onclick="closeZhaHuModal()" style="background:var(--bg2);border:none;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;color:var(--text2)">取消</button>
     </div>
-    <div class="modal-sub">30番 + 連莊${bonus}番 · 按出銃$${unit}/番</div>
+    <div class="modal-sub">30番 + 連莊${bonusFan}番 · 按出銃$${unit}/番</div>
     <div class="modal-section">詐胡者</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
       ${g.players.map((p,i)=>`<button class="type-btn ${payerIdx===i?'sel':''}" onclick="setZhaHuPayer(${i})">
@@ -1666,13 +1686,17 @@ async function fetchSpectatorState(code) {
 
 function renderSpectatorView() {
   const g = S.spectatorGame;
+  const tab = S.spectatorTab || 'game';
+
   if (!g) {
     document.getElementById('main-content').innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px">
         <div style="font-size:32px">📡</div>
         <div style="font-size:16px;font-weight:700">正在連接直播...</div>
-        <div id="spectator-status" style="font-size:13px;color:var(--text2)">代碼: ${S.spectatorCode}</div>
+        <div style="font-size:13px;color:var(--text2)">代碼: ${S.spectatorCode}</div>
+        <button onclick="leaveSpectator()" style="padding:8px 20px;border:none;background:var(--bg2);border-radius:99px;font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 離開</button>
       </div>`;
+    document.getElementById('tabbar').style.display = 'none';
     return;
   }
 
@@ -1680,48 +1704,63 @@ function renderSpectatorView() {
   const windCircle = WINDS[round_wind]+'圈';
   const windLabel = windCircle+WINDS[g.dealer]+'風';
 
-  const card = (idx) => {
-    const p = g.players[idx];
-    const isDealer = idx===g.dealer;
-    const sc = p.score;
-    const relWind = WINDS[(idx - g.dealer + 4) % 4];
-    return `<div class="player-card ${isDealer?'is-dealer':''}" style="cursor:default">
-      ${isDealer?`<div class="dealer-badge">莊</div>`:''}
-      <div class="player-emoji">${p.emoji}</div>
-      <div class="player-name">${esc(p.name)}</div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:3px">${windCircle}${relWind}位</div>
-      <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
-      ${isDealer&&g.dealerStreak>0?`<div style="font-size:10px;color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</div>`:''}
-    </div>`;
-  };
+  // Show tabbar for spectator
+  const tb = document.getElementById('tabbar');
+  tb.style.display = 'flex';
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab===tab));
 
-  // Latest hand
-  const latest = g.log && g.log[0];
-  const latestDesc = latest ? `<div style="font-size:13px;color:var(--text2);text-align:center;padding:8px 0">${esc(latest.desc||latest.type)}</div>` : '';
+  if (tab === 'game') {
+    const card = (idx) => {
+      const p = g.players[idx];
+      const isDealer = idx===g.dealer;
+      const sc = p.score;
+      const relWind = WINDS[(idx - g.dealer + 4) % 4];
+      return `<div class="player-card ${isDealer?'is-dealer':''}" style="cursor:default">
+        ${isDealer?`<div class="dealer-badge">莊</div>`:''}
+        <div class="player-emoji">${p.emoji}</div>
+        <div class="player-name">${esc(p.name)}</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:3px">${windCircle}${relWind}位</div>
+        <div class="player-score ${scoreClass(sc)}">${sc>0?'+':''}${sc}</div>
+        ${isDealer&&g.dealerStreak>0?`<div style="font-size:10px;color:var(--dealer-bg);font-weight:700">連莊×${g.dealerStreak}</div>`:''}
+      </div>`;
+    };
+    const latest = g.log && g.log[0];
+    document.getElementById('main-content').innerHTML = `
+      <div class="game-page">
+        <div class="round-info">
+          <div class="round-badge">
+            <span>👁</span><span class="arrow">›</span>
+            <span>${windLabel}</span><span class="arrow">›</span>
+            <span style="color:var(--text2)">第${g.round}局</span>
+            <span style="font-size:11px;color:var(--green)">● 直播</span>
+          </div>
+        </div>
+        <div class="cross-outer">
+          <div class="cross-card-wrap" style="grid-column:2;grid-row:1">${card(2)}</div>
+          <div class="cross-card-wrap-side" style="grid-column:1;grid-row:2">${card(3)}</div>
+          <div class="cross-center-col" style="grid-column:2;grid-row:2;align-self:center">
+            <div class="center-wind">${windLabel}</div>
+          </div>
+          <div class="cross-card-wrap-side" style="grid-column:3;grid-row:2">${card(1)}</div>
+          <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
+        </div>
+        ${latest?`<div style="font-size:13px;color:var(--text2);text-align:center;padding:6px 0">${esc(latest.desc||latest.type)}</div>`:''}
+        <div style="text-align:center;font-size:11px;color:var(--text3)">每3秒更新 · 代碼 ${S.spectatorCode}</div>
+      </div>`;
+  } else if (tab === 'stats') {
+    const savedGame = S.game; S.game = g;
+    document.getElementById('main-content').innerHTML = `<div style="overflow-y:auto;height:100%">${renderStatsTab()}</div>`;
+    S.game = savedGame;
+  } else if (tab === 'log') {
+    const savedGame = S.game; S.game = g;
+    document.getElementById('main-content').innerHTML = `<div style="overflow-y:auto;height:100%">${renderLogTab()}</div>`;
+    S.game = savedGame;
+  }
+}
 
-  document.getElementById('main-content').innerHTML = `
-    <div class="game-page">
-      <div class="round-info">
-        <div class="round-badge">
-          <span>👁 觀看</span><span class="arrow">›</span>
-          <span>${windLabel}</span><span class="arrow">›</span>
-          <span style="color:var(--text2)">第${g.round}局</span>
-          <span style="font-size:11px;color:var(--green)">● 直播</span>
-        </div>
-      </div>
-      <div class="cross-outer">
-        <div class="cross-card-wrap" style="grid-column:2;grid-row:1">${card(2)}</div>
-        <div class="cross-card-wrap-side" style="grid-column:1;grid-row:2">${card(3)}</div>
-        <div class="cross-center-col" style="grid-column:2;grid-row:2;align-self:center">
-          <div class="center-wind">${windLabel}</div>
-        </div>
-        <div class="cross-card-wrap-side" style="grid-column:3;grid-row:2">${card(1)}</div>
-        <div class="cross-card-wrap" style="grid-column:2;grid-row:3">${card(0)}</div>
-      </div>
-      ${latestDesc}
-      <div style="text-align:center;font-size:11px;color:var(--text3);padding-bottom:4px">每3秒更新 · 代碼 ${S.spectatorCode}</div>
-      <button onclick="leaveSpectator()" style="width:100%;padding:8px;border:none;background:none;color:var(--text3);font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 離開</button>
-    </div>`;
+function spectatorSwitchTab(t) {
+  S.spectatorTab = t;
+  renderSpectatorView();
 }
 
 // ── Surrender (投降) ──────────────────────────────────────────────────────────
@@ -1740,7 +1779,7 @@ function checkSurrenderPrompt() {
         key,
         wIdx, lIdx,
         pulls,
-        cumDollars: cum * unit,
+        cumDollars: cum,
         wName: g.players[wIdx]?.name,
         lName: g.players[lIdx]?.name,
       });
@@ -1874,15 +1913,6 @@ function setWinType(t) {
 }
 function setDiscard(i) { S.winInput.discard=i; renderWinModal(); }
 
-function adjustFan(wi, delta) {
-  const cur = S.winInput.fans[wi] || 1;
-  const newVal = Math.max(1, Math.min(250, cur + delta));
-  S.winInput.fans[wi] = newVal;
-  const el = document.getElementById(`fan-input-${wi}`);
-  if (el) el.value = newVal;
-  updatePreviewOnly();
-}
-
 function toggleExtraWinner(i) {
   const w=S.winInput;
   const idx = w.winners.indexOf(i);
@@ -1978,7 +2008,7 @@ function startGame() {
       const p=S.profiles.find(pr=>pr.name===name);
       return {name,emoji:p?p.emoji:'👤',score:0,wins:0,losses:0,huWins:0,zimoWins:0,shots:0};
     }),
-    dealer:0,dealerStreak:0,round:1,windRound:0,unitHu,unitZimo,chains:{},currentWinners:[],bench:[],log:[]
+    dealer:0,dealerStreak:0,round:1,windRound:0,unitHu,unitZimo,chains:{},currentWinners:[],bench:[],log:[], version:2
   };
   saveGame(S.game);
   S.setupSeats=[null,null,null,null];
